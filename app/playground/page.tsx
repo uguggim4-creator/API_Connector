@@ -129,7 +129,7 @@ function PlaygroundContent() {
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
             console.log('이미지 형식:', seedreamReferenceImages[0]?.substring(0, 50) + '...');
           }
-          // Save the request body for display in UI
+          // Save the request body for display in UI (seedream-specific feature)
           setRequestBody(body);
           break;
 
@@ -531,6 +531,7 @@ function PlaygroundContent() {
                   )}
 
                   {/* Seedream 요청 JSON 표시 */}
+                  {/* Double check for platform and requestBody for safety and clarity */}
                   {selectedPlatform === 'seedream' && requestBody && (
                     <details className="mb-4">
                       <summary className="cursor-pointer text-blue-400 text-sm hover:text-blue-300 mb-2 font-medium">
