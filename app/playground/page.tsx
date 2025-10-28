@@ -1,10 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function PlaygroundPage() {
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('openai');
+function PlaygroundContent() {
+  const searchParams = useSearchParams();
+  const modelFromUrl = searchParams.get('model');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>(modelFromUrl || 'openai');
+
+  // URL 파라미터가 변경될 때마다 선택된 플랫폼 업데이트
+  useEffect(() => {
+    if (modelFromUrl) {
+      setSelectedPlatform(modelFromUrl);
+    }
+  }, [modelFromUrl]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -450,5 +460,17 @@ export default function PlaygroundPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">로딩 중...</div>
+      </div>
+    }>
+      <PlaygroundContent />
+    </Suspense>
   );
 }
