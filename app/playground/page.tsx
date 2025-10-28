@@ -124,12 +124,18 @@ function PlaygroundContent() {
           }
           // 참조 이미지가 있으면 추가 (전체 data URL 형식으로 전송)
           if (seedreamReferenceImages.length > 0) {
-            body.image_url = seedreamReferenceImages;
-            body.style_strength = seedreamStyleStrength; // 참조 이미지 스타일 강도
-            console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
-            console.log('Data URL 형식으로 전송');
-            console.log('스타일 강도:', seedreamStyleStrength);
-            console.log('첫 번째 이미지 길이:', body.image_url[0]?.length);
+            // 유효한 data URL 형식인지 확인
+            const validImages = seedreamReferenceImages.filter(img => 
+              typeof img === 'string' && img.startsWith('data:image/')
+            );
+            if (validImages.length > 0) {
+              body.image_url = validImages;
+              body.style_strength = seedreamStyleStrength; // 참조 이미지 스타일 강도
+              console.log(`📸 참조 이미지 ${validImages.length}개 전송 중...`);
+              console.log('Data URL 형식으로 전송');
+              console.log('스타일 강도:', seedreamStyleStrength);
+              console.log('첫 번째 이미지 길이:', body.image_url[0]?.length);
+            }
           }
           break;
 
