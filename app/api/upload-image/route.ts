@@ -1,8 +1,6 @@
-// 이미지 업로드 API - 공개 URL로 이미지 제공
+// 이미지 업로드 API - Supabase Storage를 사용하여 공개 URL로 이미지 제공
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { uploadImageToSupabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,13 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // public/uploads 디렉토리 생성
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // 파일 저장
+    // 파일을 버퍼로 변환
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -48,18 +40,23 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${timestamp}-${safeName}`;
-    const filepath = join(uploadDir, filename);
 
-    await writeFile(filepath, buffer);
+    // Supabase에 업로드
+    const bucketName = process.env.SUPABASE_BUCKET_NAME || 'seedream-images';
+    const result = await uploadImageToSupabase(buffer, filename, bucketName);
 
-    // 상대 URL 반환 (클라이언트가 전체 URL을 구성)
-    const url = `/uploads/${filename}`;
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error },
+        { status: 500 }
+      );
+    }
 
-    console.log(`✅ 이미지 업로드 완료: ${filename} (${(file.size / 1024).toFixed(2)}KB)`);
+    console.log(`✅ 이미지 업로드 완료: ${filename} (${(file.size / 1024).toFixed(2)}KB) → ${result.url}`);
 
     return NextResponse.json({
       success: true,
-      url,
+      url: result.url,
       filename,
       size: file.size,
     });
