@@ -124,7 +124,7 @@ function PlaygroundContent() {
           }
           // 참조 이미지가 있으면 추가 (data URL 프리픽스 제거하고 순수 base64만 전송)
           if (seedreamReferenceImages.length > 0) {
-            body.image_url = seedreamReferenceImages.map(img => {
+            body.reference_image = seedreamReferenceImages.map(img => {
               // data:image/png;base64, 같은 프리픽스 제거
               const base64Data = img.includes(',') ? img.split(',')[1] : img;
               return base64Data;
@@ -133,7 +133,7 @@ function PlaygroundContent() {
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
             console.log('순수 base64 형식으로 변환 완료');
             console.log('스타일 강도:', seedreamStyleStrength);
-            console.log('첫 번째 이미지 길이:', body.image_url[0]?.length);
+            console.log('첫 번째 이미지 길이:', body.reference_image[0]?.length);
           }
           break;
 
