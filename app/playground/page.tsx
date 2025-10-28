@@ -172,12 +172,12 @@ function PlaygroundContent() {
           continue;
         }
 
-        // 전체 URL 생성 (상대 URL을 절대 URL로 변환)
-        const fullUrl = `${window.location.origin}${uploadResult.url}`;
+        // Supabase에서 반환된 공개 URL 사용 (이미 전체 URL)
+        const publicUrl = uploadResult.url;
 
         // 업로드된 이미지의 공개 URL 추가
-        setSeedreamReferenceImages((prev) => [...prev, fullUrl]);
-        console.log(`✅ 이미지 업로드 완료: ${file.name} → ${fullUrl}`);
+        setSeedreamReferenceImages((prev) => [...prev, publicUrl]);
+        console.log(`✅ 이미지 업로드 완료: ${file.name} → ${publicUrl}`);
       }
     } catch (error) {
       console.error('이미지 업로드 중 오류:', error);
@@ -571,7 +571,7 @@ function PlaygroundContent() {
                       </div>
                     ))}
                     <p className="text-gray-500 text-sm mt-1">
-                      파일 업로드 시 서버에 저장 후 공개 URL로 전달 (jpeg/png, 최대 10MB, 해상도: 14px~6000px, 종횡비: 1:3~3:1)
+                      파일 업로드 시 Supabase Storage에 저장 후 공개 URL로 전달 (jpeg/png, 최대 10MB, 해상도: 14px~6000px, 종횡비: 1:3~3:1)
                     </p>
                     <p className="text-gray-400 text-xs mt-1">
                       💡 최대 10개 이미지 업로드 가능
