@@ -35,15 +35,11 @@ function PlaygroundContent() {
   // Seedream
   const [seedreamPrompt, setSeedreamPrompt] = useState('');
   const [seedreamModel, setSeedreamModel] = useState('seedream-4-0-250828');
-  const [seedreamSize, setSeedreamSize] = useState(''); // 2K, 4K 등 (비어있으면 width/height 사용)
-  const [seedreamWidth, setSeedreamWidth] = useState(2048);
-  const [seedreamHeight, setSeedreamHeight] = useState(2048);
-  const [seedreamNumImages, setSeedreamNumImages] = useState(1);
+  const [seedreamAspectRatio, setSeedreamAspectRatio] = useState('1:1'); // 종횡비
   const [seedreamResponseFormat, setSeedreamResponseFormat] = useState('url');
   const [seedreamWatermark, setSeedreamWatermark] = useState(true);
   const [seedreamSequentialGeneration, setSeedreamSequentialGeneration] = useState('disabled');
   const [seedreamReferenceImages, setSeedreamReferenceImages] = useState<string[]>([]);
-  const [seedreamStyleStrength, setSeedreamStyleStrength] = useState(0.8);
 
   // Veo
   const [veoPrompt, setVeoPrompt] = useState('');
@@ -148,30 +144,38 @@ function PlaygroundContent() {
 
         case 'seedream':
           endpoint = '/api/platforms/seedream';
+
+          // 종횡비에 따른 해상도 매핑
+          const resolutionMap: { [key: string]: { width: number; height: number } } = {
+            '1:1': { width: 2048, height: 2048 },
+            '4:3': { width: 2304, height: 1728 },
+            '3:4': { width: 1728, height: 2304 },
+            '16:9': { width: 2560, height: 1440 },
+            '9:16': { width: 1440, height: 2560 },
+            '3:2': { width: 2496, height: 1664 },
+            '2:3': { width: 1664, height: 2496 },
+            '21:9': { width: 3024, height: 1296 },
+          };
+
+          const resolution = resolutionMap[seedreamAspectRatio];
+
           body = {
             action: 'image',
             model: seedreamModel,
             prompt: seedreamPrompt,
-            num_images: seedreamNumImages,
+            width: resolution.width,
+            height: resolution.height,
             response_format: seedreamResponseFormat,
             watermark: seedreamWatermark,
             sequential_image_generation: seedreamSequentialGeneration,
           };
-          // 해상도 설정: size 프리셋이 있으면 사용, 없으면 width/height 사용
-          if (seedreamSize) {
-            body.size = seedreamSize;
-          } else {
-            body.width = seedreamWidth;
-            body.height = seedreamHeight;
-          }
+
           // 참조 이미지가 있으면 추가 (빈 URL 제외)
           const validImageUrls = seedreamReferenceImages.filter(url => url && url.trim() !== '');
           if (validImageUrls.length > 0) {
             body.image = validImageUrls.length === 1 ? validImageUrls[0] : validImageUrls;
-            body.style_strength = seedreamStyleStrength;
             console.log(`📸 참조 이미지 ${validImageUrls.length}개 전송 중...`);
             console.log('이미지 URL:', validImageUrls);
-            console.log('스타일 강도:', seedreamStyleStrength);
           }
           // Save the request body for display in UI (seedream-specific feature)
           setRequestBody(body);
@@ -375,62 +379,23 @@ function PlaygroundContent() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">이미지 개수</label>
+                      <label className="block text-gray-300 mb-2">해상도</label>
                       <select
-                        value={seedreamNumImages}
-                        onChange={(e) => setSeedreamNumImages(Number(e.target.value))}
+                        value={seedreamAspectRatio}
+                        onChange={(e) => setSeedreamAspectRatio(e.target.value)}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
                       >
-                        <option value={1}>1개</option>
-                        <option value={2}>2개</option>
-                        <option value={4}>4개</option>
+                        <option value="1:1">1:1 (2048x2048)</option>
+                        <option value="4:3">4:3 (2304x1728)</option>
+                        <option value="3:4">3:4 (1728x2304)</option>
+                        <option value="16:9">16:9 (2560x1440)</option>
+                        <option value="9:16">9:16 (1440x2560)</option>
+                        <option value="3:2">3:2 (2496x1664)</option>
+                        <option value="2:3">2:3 (1664x2496)</option>
+                        <option value="21:9">21:9 (3024x1296)</option>
                       </select>
                     </div>
                   </div>
-
-                  {/* 해상도 설정 */}
-                  <div>
-                    <label className="block text-gray-300 mb-2">해상도 프리셋</label>
-                    <select
-                      value={seedreamSize}
-                      onChange={(e) => setSeedreamSize(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
-                    >
-                      <option value="">사용자 지정 (아래 너비/높이 사용)</option>
-                      <option value="2K">2K (2048x2048)</option>
-                      <option value="4K">4K (4096x4096)</option>
-                    </select>
-                  </div>
-
-                  {/* 사용자 지정 해상도 */}
-                  {!seedreamSize && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-gray-300 mb-2">너비</label>
-                        <input
-                          type="number"
-                          value={seedreamWidth}
-                          onChange={(e) => setSeedreamWidth(Number(e.target.value))}
-                          step={64}
-                          min={512}
-                          max={4096}
-                          className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-2">높이</label>
-                        <input
-                          type="number"
-                          value={seedreamHeight}
-                          onChange={(e) => setSeedreamHeight(Number(e.target.value))}
-                          step={64}
-                          min={512}
-                          max={4096}
-                          className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
-                        />
-                      </div>
-                    </div>
-                  )}
 
                   {/* 고급 설정 */}
                   <div className="border-t border-gray-600 pt-4">
@@ -510,7 +475,7 @@ function PlaygroundContent() {
                           type="text"
                           value={url}
                           onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                          placeholder="https://your-domain.com/image.jpg"
+                          placeholder="https://your-domain.com/image.png"
                           className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
                         />
                         <button
@@ -522,8 +487,8 @@ function PlaygroundContent() {
                         </button>
                       </div>
                     ))}
-                    <p className="text-gray-500 text-sm mt-1">파일을 업로드하거나 공개 이미지 URL을 입력하세요</p>
-                    
+                    <p className="text-gray-500 text-sm mt-1">파일을 업로드하거나 공개 이미지 URL을 입력하세요 (예: .jpg, .png)</p>
+
                     {/* 참조 이미지 미리보기 */}
                     {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
                       <div className="mt-4">
@@ -545,23 +510,6 @@ function PlaygroundContent() {
                       </div>
                     )}
                   </div>
-
-                  {/* 스타일 강도 설정 */}
-                  {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
-                    <div>
-                      <label className="block text-gray-300 mb-2">스타일 강도 (0.0 - 1.0)</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={seedreamStyleStrength}
-                        onChange={(e) => setSeedreamStyleStrength(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <p className="text-gray-500 text-sm mt-1">{seedreamStyleStrength}</p>
-                    </div>
-                  )}
                 </div>
               )}
 

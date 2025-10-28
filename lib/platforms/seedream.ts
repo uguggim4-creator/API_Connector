@@ -12,12 +12,10 @@ export interface SeedreamImageRequest {
   height?: number;
   size?: string; // 2K, 4K 등
   aspect_ratio?: string;
-  num_images?: number;
   guidance_scale?: number;
   steps?: number;
   seed?: number;
   scheduler?: string;
-  style_strength?: number;
   color_preserve?: boolean;
   contrast_enhance?: boolean;
   prompt_language?: string;
@@ -93,12 +91,10 @@ export class SeedreamClient {
       if (request.width) requestBody.width = request.width;
       if (request.height) requestBody.height = request.height;
       if (request.aspect_ratio) requestBody.aspect_ratio = request.aspect_ratio;
-      if (request.num_images) requestBody.num_images = request.num_images;
       if (request.guidance_scale !== undefined) requestBody.guidance_scale = request.guidance_scale;
       if (request.steps) requestBody.steps = request.steps;
       if (request.seed) requestBody.seed = request.seed;
       if (request.scheduler) requestBody.scheduler = request.scheduler;
-      if (request.style_strength !== undefined) requestBody.style_strength = request.style_strength;
       if (request.color_preserve !== undefined) requestBody.color_preserve = request.color_preserve;
       if (request.contrast_enhance !== undefined) requestBody.contrast_enhance = request.contrast_enhance;
       if (request.prompt_language) requestBody.prompt_language = request.prompt_language;
