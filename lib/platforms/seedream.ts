@@ -186,7 +186,7 @@ export class SeedreamClient {
       const response = await axios.post(
         `${this.baseUrl}/seedream/upscale`,
         {
-          image_url: imageUrl,
+          image_input: [imageUrl], // Changed to image_input array for consistency with API documentation
           scale_factor: scaleFactor,
         },
         {
