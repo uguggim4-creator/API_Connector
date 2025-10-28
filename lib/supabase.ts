@@ -1,14 +1,26 @@
 // Supabase Client for Storage
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+let supabaseInstance: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Supabase credentials not found. Image upload to Supabase will not work.');
+/**
+ * Get or create Supabase client instance
+ * Lazy initialization to avoid build-time errors when env vars are not set
+ */
+function getSupabaseClient(): SupabaseClient | null {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
+
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+  }
+
+  return supabaseInstance;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * Upload an image to Supabase Storage and return the public URL
@@ -23,7 +35,9 @@ export async function uploadImageToSupabase(
   bucketName: string = 'seedream-images'
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    if (!supabaseUrl || !supabaseKey) {
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
       return {
         success: false,
         error: 'Supabase credentials not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in your environment variables.',
