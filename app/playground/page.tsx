@@ -42,6 +42,7 @@ function PlaygroundContent() {
   const [seedreamWatermark, setSeedreamWatermark] = useState(true);
   const [seedreamSequentialGeneration, setSeedreamSequentialGeneration] = useState('disabled');
   const [seedreamReferenceImages, setSeedreamReferenceImages] = useState<string[]>([]);
+  const [seedreamStyleStrength, setSeedreamStyleStrength] = useState(0.5); // 참조 이미지 스타일 강도 (0.0 ~ 1.0)
 
   // Veo
   const [veoPrompt, setVeoPrompt] = useState('');
@@ -121,11 +122,18 @@ function PlaygroundContent() {
             body.width = seedreamWidth;
             body.height = seedreamHeight;
           }
-          // 참조 이미지가 있으면 추가
+          // 참조 이미지가 있으면 추가 (data URL 프리픽스 제거하고 순수 base64만 전송)
           if (seedreamReferenceImages.length > 0) {
-            body.image_url = seedreamReferenceImages;
+            body.image_url = seedreamReferenceImages.map(img => {
+              // data:image/png;base64, 같은 프리픽스 제거
+              const base64Data = img.includes(',') ? img.split(',')[1] : img;
+              return base64Data;
+            });
+            body.style_strength = seedreamStyleStrength; // 참조 이미지 스타일 강도
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
-            console.log('이미지 형식:', seedreamReferenceImages[0]?.substring(0, 50) + '...');
+            console.log('순수 base64 형식으로 변환 완료');
+            console.log('스타일 강도:', seedreamStyleStrength);
+            console.log('첫 번째 이미지 길이:', body.image_url[0]?.length);
           }
           break;
 
@@ -462,6 +470,27 @@ function PlaygroundContent() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* 참조 이미지 스타일 강도 (참조 이미지가 있을 때만 표시) */}
+                  {seedreamReferenceImages.length > 0 && (
+                    <div>
+                      <label className="block text-gray-300 mb-2">
+                        스타일 강도 (Style Strength): {seedreamStyleStrength.toFixed(2)}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={seedreamStyleStrength}
+                        onChange={(e) => setSeedreamStyleStrength(parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <p className="text-gray-500 text-sm mt-1">
+                        참조 이미지의 스타일을 얼마나 반영할지 조절합니다 (0.0 = 약함, 1.0 = 강함)
+                      </p>
                     </div>
                   )}
                 </div>
