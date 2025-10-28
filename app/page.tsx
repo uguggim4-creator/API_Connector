@@ -1,4 +1,14 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 export default function Home() {
+  const router = useRouter();
+
+  const handlePlatformClick = (modelId: string) => {
+    router.push(`/playground?model=${modelId}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm">
@@ -16,6 +26,7 @@ export default function Home() {
             description="GPT, DALL-E, Whisper 등 다양한 AI 모델"
             icon="🤖"
             status="active"
+            onClick={() => handlePlatformClick('openai')}
           />
 
           {/* Google Gemini */}
@@ -24,6 +35,7 @@ export default function Home() {
             description="구글의 차세대 멀티모달 AI 모델"
             icon="✨"
             status="active"
+            onClick={() => handlePlatformClick('gemini')}
           />
 
           {/* Google Veo 3.1 */}
@@ -32,6 +44,7 @@ export default function Home() {
             description="고품질 AI 비디오 생성 (최대 60초, 1080p)"
             icon="🎬"
             status="active"
+            onClick={() => handlePlatformClick('veo')}
           />
 
           {/* Kling AI */}
@@ -40,6 +53,7 @@ export default function Home() {
             description="텍스트/이미지에서 비디오 생성"
             icon="🎥"
             status="active"
+            onClick={() => handlePlatformClick('kling')}
           />
 
           {/* Seedream 4.0 */}
@@ -48,6 +62,7 @@ export default function Home() {
             description="ByteDance의 4K AI 이미지 생성"
             icon="🖼️"
             status="active"
+            onClick={() => handlePlatformClick('seedream')}
           />
         </div>
 
@@ -142,11 +157,15 @@ interface PlatformCardProps {
   description: string;
   icon: string;
   status: 'active' | 'inactive';
+  onClick: () => void;
 }
 
-function PlatformCard({ name, description, icon, status }: PlatformCardProps) {
+function PlatformCard({ name, description, icon, status, onClick }: PlatformCardProps) {
   return (
-    <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer">
+    <div
+      onClick={onClick}
+      className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all cursor-pointer transform hover:scale-105"
+    >
       <div className="flex items-start justify-between mb-3">
         <span className="text-4xl">{icon}</span>
         <span className={`px-2 py-1 rounded-full text-xs ${
