@@ -24,10 +24,12 @@
 - **언어**: TypeScript
 - **스타일링**: Tailwind CSS
 - **데이터베이스**: JSON 기반 파일 저장소
+- **Storage**: Supabase Storage (이미지 업로드용)
 - **AI SDK**:
   - OpenAI SDK
   - Google Generative AI SDK
   - Axios (Kling, Seedream, Veo)
+  - Supabase JS (@supabase/supabase-js)
 
 ## 시작하기
 
@@ -42,9 +44,26 @@ npm install
 `.env` 파일을 생성하고 다음 내용을 추가하세요:
 
 ```env
+# 필수 환경 변수
 DATABASE_URL="file:./dev.db"
 ENCRYPTION_KEY="your-secret-encryption-key-change-this-in-production"
+
+# Supabase 설정 (Seedream 이미지 업로드용)
+NEXT_PUBLIC_SUPABASE_URL="your-supabase-project-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+
+# API 키 (선택사항 - 자동 연결 사용 시)
+OPENAI_API_KEY="sk-..."
+GOOGLE_API_KEY="AI..."
+KLING_API_KEY="..."
+SEEDREAM_API_KEY="..."
 ```
+
+**Supabase 설정 방법**:
+1. [Supabase](https://supabase.com/)에서 새 프로젝트 생성
+2. Storage → 새 버킷 생성 (`seedream-images`)
+3. Settings → API → URL과 `anon` `public` 키 복사
+4. `.env` 파일에 추가
 
 ### 3. 개발 서버 실행
 
