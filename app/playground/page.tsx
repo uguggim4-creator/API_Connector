@@ -214,7 +214,7 @@ function PlaygroundContent() {
           // 참조 이미지가 있으면 추가 (빈 URL 제외)
           const validImageUrls = seedreamReferenceImages.filter(url => url && url.trim() !== '');
           if (validImageUrls.length > 0) {
-            body.image = validImageUrls.length === 1 ? validImageUrls[0] : validImageUrls;
+            body.image_url = validImageUrls;
             console.log(`📸 참조 이미지 ${validImageUrls.length}개 전송 중...`);
             console.log('이미지 URL:', validImageUrls);
           }
