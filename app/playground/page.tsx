@@ -33,7 +33,7 @@ function PlaygroundContent() {
 
   // Seedream
   const [seedreamPrompt, setSeedreamPrompt] = useState('');
-  const [seedreamModel, setSeedreamModel] = useState('bytedance-seedream-4-0-250828');
+  const [seedreamModel, setSeedreamModel] = useState('doubao-seedream-4-0-250828');
   const [seedreamSize, setSeedreamSize] = useState(''); // 2K, 4K 등 (비어있으면 width/height 사용)
   const [seedreamWidth, setSeedreamWidth] = useState(2048);
   const [seedreamHeight, setSeedreamHeight] = useState(2048);
@@ -322,8 +322,8 @@ function PlaygroundContent() {
                         onChange={(e) => setSeedreamModel(e.target.value)}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
                       >
-                        <option value="bytedance-seedream-4-0-250828">Seedream 4.0 (250828)</option>
-                        <option value="ByteDance-Seed/Seedream-4.0">Seedream 4.0 (Alt)</option>
+                        <option value="doubao-seedream-4-0-250828">Seedream 4.0 (doubao)</option>
+                        <option value="bytedance-seedream-4-0-250828">Seedream 4.0 (bytedance)</option>
                       </select>
                     </div>
                     <div>

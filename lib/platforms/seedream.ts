@@ -81,7 +81,7 @@ export class SeedreamClient {
     try {
       // Seedream API 요청 바디 구성
       const requestBody: any = {
-        model: request.model || 'seedream-4-0-250828', // 필수 파라미터
+        model: request.model || 'doubao-seedream-4-0-250828', // 필수 파라미터
         prompt: request.prompt, // 필수 파라미터
       };
 
