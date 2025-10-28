@@ -64,7 +64,7 @@ function PlaygroundContent() {
     setSeedreamReferenceImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 이미지 파일 업로드 처리
+  // 이미지 파일 업로드 처리 (Base64 인코딩)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -77,31 +77,23 @@ function PlaygroundContent() {
           continue;
         }
 
-        // FormData 생성
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // 서버로 업로드
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          // 업로드된 이미지의 전체 URL 생성
-          const fullUrl = window.location.origin + data.url;
-          setSeedreamReferenceImages((prev) => [...prev, fullUrl]);
-          console.log('✅ 이미지 업로드 성공:', fullUrl);
-        } else {
-          console.error('❌ 이미지 업로드 실패:', data.error);
-          alert(`이미지 업로드 실패: ${data.error}`);
-        }
+        // 파일을 Base64로 인코딩
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64String = event.target?.result as string;
+          // Data URI 형태로 저장
+          setSeedreamReferenceImages((prev) => [...prev, base64String]);
+          console.log('✅ 이미지 로드 완료:', file.name);
+        };
+        reader.onerror = (error) => {
+          console.error('❌ 이미지 로드 실패:', error);
+          alert(`이미지 로드 실패: ${file.name}`);
+        };
+        reader.readAsDataURL(file);
       }
     } catch (error) {
-      console.error('이미지 업로드 중 오류:', error);
-      alert('이미지 업로드 중 오류가 발생했습니다.');
+      console.error('이미지 로드 중 오류:', error);
+      alert('이미지 로드 중 오류가 발생했습니다.');
     }
   };
 
