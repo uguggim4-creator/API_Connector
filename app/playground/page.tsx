@@ -47,6 +47,10 @@ function PlaygroundContent() {
 
   // 참조 이미지 URL 추가
   const handleAddImageUrl = () => {
+    if (seedreamReferenceImages.length >= 10) {
+      alert('최대 10개의 참조 이미지만 추가할 수 있습니다.');
+      return;
+    }
     setSeedreamReferenceImages((prev) => [...prev, '']);
   };
 
@@ -69,11 +73,25 @@ function PlaygroundContent() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // 최대 10개 이미지 제한 확인
+    if (seedreamReferenceImages.length + files.length > 10) {
+      alert('최대 10개의 참조 이미지만 업로드할 수 있습니다.');
+      return;
+    }
+
     try {
       for (const file of Array.from(files)) {
-        // 이미지 파일인지 확인
-        if (!file.type.startsWith('image/')) {
-          alert(`${file.name}은(는) 이미지 파일이 아닙니다.`);
+        // 파일 형식 검증 (jpeg, png만 허용)
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+          alert(`${file.name}: 지원되지 않는 형식입니다. (jpeg, png만 허용)`);
+          continue;
+        }
+
+        // 파일 크기 검증 (최대 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+          alert(`${file.name}: 파일 크기가 10MB를 초과합니다. (현재: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
           continue;
         }
 
@@ -81,13 +99,44 @@ function PlaygroundContent() {
         const reader = new FileReader();
         reader.onload = (event) => {
           const base64String = event.target?.result as string;
-          // Data URI 형태로 저장
-          setSeedreamReferenceImages((prev) => [...prev, base64String]);
-          console.log('✅ 이미지 로드 완료:', file.name);
+
+          // 이미지 로드하여 해상도 검증
+          const img = new Image();
+          img.onload = () => {
+            const width = img.width;
+            const height = img.height;
+
+            // 최소 크기 검증
+            if (width <= 14 || height <= 14) {
+              alert(`${file.name}: 이미지가 너무 작습니다. (최소: 14x14px, 현재: ${width}x${height}px)`);
+              return;
+            }
+
+            // 최대 픽셀 검증
+            if (width > 6000 || height > 6000) {
+              alert(`${file.name}: 이미지가 너무 큽니다. (최대: 6000x6000px, 현재: ${width}x${height}px)`);
+              return;
+            }
+
+            // 종횡비 검증 (1/3 ~ 3)
+            const aspectRatio = width / height;
+            if (aspectRatio < 1/3 || aspectRatio > 3) {
+              alert(`${file.name}: 종횡비가 유효하지 않습니다. (허용 범위: 1:3 ~ 3:1, 현재: ${aspectRatio.toFixed(2)})`);
+              return;
+            }
+
+            // 모든 검증 통과 - Data URI 형태로 저장
+            setSeedreamReferenceImages((prev) => [...prev, base64String]);
+            console.log(`✅ 이미지 로드 완료: ${file.name} (${width}x${height}px)`);
+          };
+          img.onerror = () => {
+            alert(`${file.name}: 이미지 로드 실패`);
+          };
+          img.src = base64String;
         };
         reader.onerror = (error) => {
-          console.error('❌ 이미지 로드 실패:', error);
-          alert(`이미지 로드 실패: ${file.name}`);
+          console.error('❌ 파일 읽기 실패:', error);
+          alert(`${file.name}: 파일 읽기 실패`);
         };
         reader.readAsDataURL(file);
       }
@@ -440,7 +489,7 @@ function PlaygroundContent() {
                       <div className="flex gap-2">
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/jpg,image/png"
                           multiple
                           onChange={handleFileUpload}
                           className="hidden"
@@ -479,7 +528,12 @@ function PlaygroundContent() {
                         </button>
                       </div>
                     ))}
-                    <p className="text-gray-500 text-sm mt-1">파일을 업로드하거나 공개 이미지 URL을 입력하세요 (예: .jpg, .png)</p>
+                    <p className="text-gray-500 text-sm mt-1">
+                      파일 업로드 (jpeg/png, 최대 10MB, 해상도: 14px~6000px, 종횡비: 1:3~3:1) 또는 공개 URL 입력
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      💡 최대 10개 이미지 업로드 가능
+                    </p>
 
                     {/* 참조 이미지 미리보기 */}
                     {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
