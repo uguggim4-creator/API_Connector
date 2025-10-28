@@ -49,32 +49,23 @@ function PlaygroundContent() {
   const [veoPrompt, setVeoPrompt] = useState('');
   const [veoDuration, setVeoDuration] = useState(10);
 
-  // 이미지 파일을 base64로 변환하는 함수
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // 참조 이미지 URL 추가
+  const handleAddImageUrl = () => {
+    setSeedreamReferenceImages((prev) => [...prev, '']);
+  };
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setSeedreamReferenceImages((prev) => [...prev, base64String]);
-      };
-      reader.readAsDataURL(file);
+  // 참조 이미지 URL 업데이트
+  const handleImageUrlChange = (index: number, url: string) => {
+    setSeedreamReferenceImages((prev) => {
+      const newUrls = [...prev];
+      newUrls[index] = url;
+      return newUrls;
     });
   };
 
   // 참조 이미지 제거 함수
   const removeReferenceImage = (index: number) => {
     setSeedreamReferenceImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Data URI에서 base64 부분만 추출하는 함수
-  const extractBase64FromDataURI = (dataURI: string): string => {
-    // data:image/jpeg;base64,/9j/4AAQSkZJRg... -> /9j/4AAQSkZJRg...
-    const base64Index = dataURI.indexOf(',');
-    if (base64Index === -1) return dataURI;
-    return dataURI.substring(base64Index + 1);
   };
 
   const handleSubmit = async () => {
@@ -132,14 +123,13 @@ function PlaygroundContent() {
             body.width = seedreamWidth;
             body.height = seedreamHeight;
           }
-          // 참조 이미지가 있으면 추가
-          if (seedreamReferenceImages.length > 0) {
-            // Data URI에서 base64 부분만 추출
-            const base64Images = seedreamReferenceImages.map(img => extractBase64FromDataURI(img));
-            body.image_url = base64Images;
+          // 참조 이미지가 있으면 추가 (빈 URL 제외)
+          const validImageUrls = seedreamReferenceImages.filter(url => url && url.trim() !== '');
+          if (validImageUrls.length > 0) {
+            body.image = validImageUrls.length === 1 ? validImageUrls[0] : validImageUrls;
             body.style_strength = seedreamStyleStrength;
-            console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
-            console.log('Base64 데이터 (처음 50자):', base64Images[0]?.substring(0, 50) + '...');
+            console.log(`📸 참조 이미지 ${validImageUrls.length}개 전송 중...`);
+            console.log('이미지 URL:', validImageUrls);
             console.log('스타일 강도:', seedreamStyleStrength);
           }
           // Save the request body for display in UI (seedream-specific feature)
@@ -445,56 +435,75 @@ function PlaygroundContent() {
                     </div>
                   </div>
 
-                  {/* 참조 이미지 업로드 */}
+                  {/* 참조 이미지 URL 입력 */}
                   <div>
-                    <label className="block text-gray-300 mb-2">참조 이미지 (선택사항)</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer"
-                    />
-                    <p className="text-gray-500 text-sm mt-1">업로드한 이미지를 참조하여 새로운 이미지를 생성합니다</p>
-                  </div>
-
-                  {/* 참조 이미지 미리보기 */}
-                  {seedreamReferenceImages.length > 0 && (
-                    <>
-                      <div>
-                        <label className="block text-gray-300 mb-2">참조 이미지 ({seedreamReferenceImages.length}개)</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-gray-300">참조 이미지 URL (선택사항)</label>
+                      <button
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
+                      >
+                        + URL 추가
+                      </button>
+                    </div>
+                    {seedreamReferenceImages.map((url, index) => (
+                      <div key={index} className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={url}
+                          onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                          placeholder="https://your-domain.com/image.jpg"
+                          className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeReferenceImage(index)}
+                          className="px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                    <p className="text-gray-500 text-sm mt-1">공개적으로 접근 가능한 이미지 URL을 입력하세요</p>
+                    
+                    {/* 참조 이미지 미리보기 */}
+                    {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-gray-300 mb-2">이미지 미리보기</label>
                         <div className="grid grid-cols-3 gap-2">
-                          {seedreamReferenceImages.map((img, index) => (
-                            <div key={index} className="relative group">
+                          {seedreamReferenceImages.filter(url => url && url.trim() !== '').map((url, index) => (
+                            <div key={index} className="relative">
                               <img
-                                src={img}
+                                src={url}
                                 alt={`참조 이미지 ${index + 1}`}
                                 className="w-full h-24 object-cover rounded-lg border border-gray-600"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
                               />
-                              <button
-                                onClick={() => removeReferenceImage(index)}
-                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                ×
-                              </button>
                             </div>
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-gray-300 mb-2">스타일 강도 (0.0 - 1.0)</label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={seedreamStyleStrength}
-                          onChange={(e) => setSeedreamStyleStrength(Number(e.target.value))}
-                          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <p className="text-gray-500 text-sm mt-1">{seedreamStyleStrength}</p>
-                      </div>
-                    </>
+                    )}
+                  </div>
+
+                  {/* 스타일 강도 설정 */}
+                  {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
+                    <div>
+                      <label className="block text-gray-300 mb-2">스타일 강도 (0.0 - 1.0)</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={seedreamStyleStrength}
+                        onChange={(e) => setSeedreamStyleStrength(Number(e.target.value))}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <p className="text-gray-500 text-sm mt-1">{seedreamStyleStrength}</p>
+                    </div>
                   )}
                 </div>
               )}
