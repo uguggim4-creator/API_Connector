@@ -33,8 +33,14 @@ function PlaygroundContent() {
 
   // Seedream
   const [seedreamPrompt, setSeedreamPrompt] = useState('');
-  const [seedreamWidth, setSeedreamWidth] = useState(1024);
-  const [seedreamHeight, setSeedreamHeight] = useState(1024);
+  const [seedreamModel, setSeedreamModel] = useState('bytedance-seedream-4-0-250828');
+  const [seedreamSize, setSeedreamSize] = useState(''); // 2K, 4K 등 (비어있으면 width/height 사용)
+  const [seedreamWidth, setSeedreamWidth] = useState(2048);
+  const [seedreamHeight, setSeedreamHeight] = useState(2048);
+  const [seedreamNumImages, setSeedreamNumImages] = useState(1);
+  const [seedreamResponseFormat, setSeedreamResponseFormat] = useState('url');
+  const [seedreamWatermark, setSeedreamWatermark] = useState(false);
+  const [seedreamSequentialGeneration, setSeedreamSequentialGeneration] = useState('disabled');
   const [seedreamReferenceImages, setSeedreamReferenceImages] = useState<string[]>([]);
 
   // Veo
@@ -101,10 +107,20 @@ function PlaygroundContent() {
           endpoint = '/api/platforms/seedream';
           body = {
             action: 'image',
+            model: seedreamModel,
             prompt: seedreamPrompt,
-            width: seedreamWidth,
-            height: seedreamHeight,
+            num_images: seedreamNumImages,
+            response_format: seedreamResponseFormat,
+            watermark: seedreamWatermark,
+            sequential_image_generation: seedreamSequentialGeneration,
           };
+          // 해상도 설정: size 프리셋이 있으면 사용, 없으면 width/height 사용
+          if (seedreamSize) {
+            body.size = seedreamSize;
+          } else {
+            body.width = seedreamWidth;
+            body.height = seedreamHeight;
+          }
           // 참조 이미지가 있으면 추가
           if (seedreamReferenceImages.length > 0) {
             body.image_url = seedreamReferenceImages;
@@ -297,24 +313,118 @@ function PlaygroundContent() {
                       className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
                     />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-300 mb-2">너비</label>
-                      <input
-                        type="number"
-                        value={seedreamWidth}
-                        onChange={(e) => setSeedreamWidth(Number(e.target.value))}
+                      <label className="block text-gray-300 mb-2">모델</label>
+                      <select
+                        value={seedreamModel}
+                        onChange={(e) => setSeedreamModel(e.target.value)}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
-                      />
+                      >
+                        <option value="bytedance-seedream-4-0-250828">Seedream 4.0 (250828)</option>
+                        <option value="ByteDance-Seed/Seedream-4.0">Seedream 4.0 (Alt)</option>
+                      </select>
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">높이</label>
-                      <input
-                        type="number"
-                        value={seedreamHeight}
-                        onChange={(e) => setSeedreamHeight(Number(e.target.value))}
+                      <label className="block text-gray-300 mb-2">이미지 개수</label>
+                      <select
+                        value={seedreamNumImages}
+                        onChange={(e) => setSeedreamNumImages(Number(e.target.value))}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
-                      />
+                      >
+                        <option value={1}>1개</option>
+                        <option value={2}>2개</option>
+                        <option value={4}>4개</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 해상도 설정 */}
+                  <div>
+                    <label className="block text-gray-300 mb-2">해상도 프리셋</label>
+                    <select
+                      value={seedreamSize}
+                      onChange={(e) => setSeedreamSize(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                    >
+                      <option value="">사용자 지정 (아래 너비/높이 사용)</option>
+                      <option value="2K">2K (2048x2048)</option>
+                      <option value="4K">4K (4096x4096)</option>
+                    </select>
+                  </div>
+
+                  {/* 사용자 지정 해상도 */}
+                  {!seedreamSize && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-gray-300 mb-2">너비</label>
+                        <input
+                          type="number"
+                          value={seedreamWidth}
+                          onChange={(e) => setSeedreamWidth(Number(e.target.value))}
+                          step={64}
+                          min={512}
+                          max={4096}
+                          className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-2">높이</label>
+                        <input
+                          type="number"
+                          value={seedreamHeight}
+                          onChange={(e) => setSeedreamHeight(Number(e.target.value))}
+                          step={64}
+                          min={512}
+                          max={4096}
+                          className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 고급 설정 */}
+                  <div className="border-t border-gray-600 pt-4">
+                    <h3 className="text-gray-300 font-semibold mb-3">고급 설정</h3>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-gray-300 mb-2">응답 형식</label>
+                          <select
+                            value={seedreamResponseFormat}
+                            onChange={(e) => setSeedreamResponseFormat(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                          >
+                            <option value="url">URL</option>
+                            <option value="base64">Base64</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-300 mb-2">순차 생성</label>
+                          <select
+                            value={seedreamSequentialGeneration}
+                            onChange={(e) => setSeedreamSequentialGeneration(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600"
+                          >
+                            <option value="disabled">비활성화 (동시 생성)</option>
+                            <option value="enabled">활성화 (순차 생성)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="seedream-watermark"
+                          checked={seedreamWatermark}
+                          onChange={(e) => setSeedreamWatermark(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="seedream-watermark" className="ml-2 text-gray-300">
+                          워터마크 표시
+                        </label>
+                      </div>
                     </div>
                   </div>
 
