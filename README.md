@@ -138,9 +138,37 @@ API_Connector/
 - `POST /api/platforms/kling` - Kling AI API 호출
 - `POST /api/platforms/seedream` - Seedream API 호출
 
+## Vercel 배포
+
+### 환경 변수 설정 (필수)
+
+Vercel과 같은 서버리스 환경에서는 파일 시스템이 읽기 전용이므로, 반드시 환경 변수로 API 키를 설정해야 합니다.
+
+1. Vercel 프로젝트 대시보드로 이동
+2. **Settings** → **Environment Variables** 클릭
+3. 다음 환경 변수를 추가:
+
+```
+ENCRYPTION_KEY=your-strong-encryption-key-here
+SEEDREAM_API_KEY=your-seedream-api-key
+OPENAI_API_KEY=your-openai-api-key
+GOOGLE_API_KEY=your-google-api-key
+KLING_API_KEY=your-kling-api-key
+```
+
+4. **Save** 클릭 후 프로젝트 재배포
+
+### 주의사항
+
+- Vercel에서는 `/tmp` 디렉토리만 쓰기 가능하지만, 요청마다 초기화됩니다
+- 따라서 API 키를 UI에서 추가해도 저장되지 않습니다
+- **반드시 환경 변수를 사용하세요**
+- 환경 변수가 설정되면 자동으로 API 키가 로드됩니다
+
 ## 보안
 
-- API 키는 AES-256-CBC 암호화로 저장됩니다
+- API 키는 AES-256-CBC 암호화로 저장됩니다 (로컬 개발 환경)
+- Vercel 등 서버리스 환경에서는 환경 변수로 직접 관리됩니다
 - 암호화 키는 환경 변수로 관리됩니다
 - 프로덕션 환경에서는 강력한 암호화 키를 사용하세요
 

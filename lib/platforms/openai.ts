@@ -25,16 +25,22 @@ export class OpenAIClient {
   }
 
   private initClient() {
+    // 먼저 DB에서 API 키를 찾음
     const apiKey = ApiKeyService.getActive('openai');
-    if (!apiKey) {
-      return;
+    if (apiKey) {
+      try {
+        const decryptedKey = decryptApiKey(apiKey.encryptedKey);
+        this.client = new OpenAI({ apiKey: decryptedKey });
+        return;
+      } catch (error) {
+        console.error('Failed to decrypt OpenAI API key from DB:', error);
+      }
     }
 
-    try {
-      const decryptedKey = decryptApiKey(apiKey.encryptedKey);
-      this.client = new OpenAI({ apiKey: decryptedKey });
-    } catch (error) {
-      console.error('Failed to initialize OpenAI client:', error);
+    // DB에 없으면 환경 변수에서 직접 읽기 (Vercel 등 서버리스 환경 대응)
+    if (process.env.OPENAI_API_KEY) {
+      this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      console.log('Using OpenAI API key from environment variable');
     }
   }
 

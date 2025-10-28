@@ -18,15 +18,21 @@ export class VeoClient {
   }
 
   private initClient() {
+    // 먼저 DB에서 API 키를 찾음
     const apiKey = ApiKeyService.getActive('veo');
-    if (!apiKey) {
-      return;
+    if (apiKey) {
+      try {
+        this.apiKey = decryptApiKey(apiKey.encryptedKey);
+        return;
+      } catch (error) {
+        console.error('Failed to decrypt Veo API key from DB:', error);
+      }
     }
 
-    try {
-      this.apiKey = decryptApiKey(apiKey.encryptedKey);
-    } catch (error) {
-      console.error('Failed to initialize Veo client:', error);
+    // DB에 없으면 환경 변수에서 직접 읽기 (Vercel 등 서버리스 환경 대응)
+    if (process.env.GOOGLE_API_KEY) {
+      this.apiKey = process.env.GOOGLE_API_KEY;
+      console.log('Using Veo API key from environment variable');
     }
   }
 
