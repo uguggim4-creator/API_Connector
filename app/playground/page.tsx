@@ -69,6 +69,14 @@ function PlaygroundContent() {
     setSeedreamReferenceImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Data URI에서 base64 부분만 추출하는 함수
+  const extractBase64FromDataURI = (dataURI: string): string => {
+    // data:image/jpeg;base64,/9j/4AAQSkZJRg... -> /9j/4AAQSkZJRg...
+    const base64Index = dataURI.indexOf(',');
+    if (base64Index === -1) return dataURI;
+    return dataURI.substring(base64Index + 1);
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setResult(null);
@@ -126,10 +134,12 @@ function PlaygroundContent() {
           }
           // 참조 이미지가 있으면 추가
           if (seedreamReferenceImages.length > 0) {
-            body.image_url = seedreamReferenceImages;
+            // Data URI에서 base64 부분만 추출
+            const base64Images = seedreamReferenceImages.map(img => extractBase64FromDataURI(img));
+            body.image_url = base64Images;
             body.style_strength = seedreamStyleStrength;
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
-            console.log('이미지 형식:', seedreamReferenceImages[0]?.substring(0, 50) + '...');
+            console.log('Base64 데이터 (처음 50자):', base64Images[0]?.substring(0, 50) + '...');
             console.log('스타일 강도:', seedreamStyleStrength);
           }
           // Save the request body for display in UI (seedream-specific feature)
