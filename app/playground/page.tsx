@@ -43,6 +43,7 @@ function PlaygroundContent() {
   const [seedreamWatermark, setSeedreamWatermark] = useState(true);
   const [seedreamSequentialGeneration, setSeedreamSequentialGeneration] = useState('disabled');
   const [seedreamReferenceImages, setSeedreamReferenceImages] = useState<string[]>([]);
+  const [seedreamStyleStrength, setSeedreamStyleStrength] = useState(0.8);
 
   // Veo
   const [veoPrompt, setVeoPrompt] = useState('');
@@ -126,8 +127,10 @@ function PlaygroundContent() {
           // 참조 이미지가 있으면 추가
           if (seedreamReferenceImages.length > 0) {
             body.image_url = seedreamReferenceImages;
+            body.style_strength = seedreamStyleStrength;
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
             console.log('이미지 형식:', seedreamReferenceImages[0]?.substring(0, 50) + '...');
+            console.log('스타일 강도:', seedreamStyleStrength);
           }
           // Save the request body for display in UI (seedream-specific feature)
           setRequestBody(body);
@@ -447,26 +450,41 @@ function PlaygroundContent() {
 
                   {/* 참조 이미지 미리보기 */}
                   {seedreamReferenceImages.length > 0 && (
-                    <div>
-                      <label className="block text-gray-300 mb-2">참조 이미지 ({seedreamReferenceImages.length}개)</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {seedreamReferenceImages.map((img, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={img}
-                              alt={`참조 이미지 ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-600"
-                            />
-                            <button
-                              onClick={() => removeReferenceImage(index)}
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
+                    <>
+                      <div>
+                        <label className="block text-gray-300 mb-2">참조 이미지 ({seedreamReferenceImages.length}개)</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {seedreamReferenceImages.map((img, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={img}
+                                alt={`참조 이미지 ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border border-gray-600"
+                              />
+                              <button
+                                onClick={() => removeReferenceImage(index)}
+                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                      <div>
+                        <label className="block text-gray-300 mb-2">스타일 강도 (0.0 - 1.0)</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={seedreamStyleStrength}
+                          onChange={(e) => setSeedreamStyleStrength(Number(e.target.value))}
+                          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <p className="text-gray-500 text-sm mt-1">{seedreamStyleStrength}</p>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
