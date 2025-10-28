@@ -68,6 +68,47 @@ function PlaygroundContent() {
     setSeedreamReferenceImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // 이미지 파일 업로드 처리
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      for (const file of Array.from(files)) {
+        // 이미지 파일인지 확인
+        if (!file.type.startsWith('image/')) {
+          alert(`${file.name}은(는) 이미지 파일이 아닙니다.`);
+          continue;
+        }
+
+        // FormData 생성
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 서버로 업로드
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 업로드된 이미지의 전체 URL 생성
+          const fullUrl = window.location.origin + data.url;
+          setSeedreamReferenceImages((prev) => [...prev, fullUrl]);
+          console.log('✅ 이미지 업로드 성공:', fullUrl);
+        } else {
+          console.error('❌ 이미지 업로드 실패:', data.error);
+          alert(`이미지 업로드 실패: ${data.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('이미지 업로드 중 오류:', error);
+      alert('이미지 업로드 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setResult(null);
@@ -438,14 +479,30 @@ function PlaygroundContent() {
                   {/* 참조 이미지 URL 입력 */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-gray-300">참조 이미지 URL (선택사항)</label>
-                      <button
-                        type="button"
-                        onClick={handleAddImageUrl}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
-                      >
-                        + URL 추가
-                      </button>
+                      <label className="block text-gray-300">참조 이미지 (선택사항)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label
+                          htmlFor="file-upload"
+                          className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm transition-colors cursor-pointer"
+                        >
+                          📁 파일 업로드
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
+                        >
+                          + URL 입력
+                        </button>
+                      </div>
                     </div>
                     {seedreamReferenceImages.map((url, index) => (
                       <div key={index} className="flex gap-2 mb-2">
@@ -465,7 +522,7 @@ function PlaygroundContent() {
                         </button>
                       </div>
                     ))}
-                    <p className="text-gray-500 text-sm mt-1">공개적으로 접근 가능한 이미지 URL을 입력하세요</p>
+                    <p className="text-gray-500 text-sm mt-1">파일을 업로드하거나 공개 이미지 URL을 입력하세요</p>
                     
                     {/* 참조 이미지 미리보기 */}
                     {seedreamReferenceImages.filter(url => url && url.trim() !== '').length > 0 && (
