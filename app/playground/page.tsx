@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-export default function PlaygroundPage() {
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('openai');
+function PlaygroundContent() {
+  const searchParams = useSearchParams();
+  const platformParam = searchParams.get('platform');
+
+  const [selectedPlatform, setSelectedPlatform] = useState<string>(
+    platformParam && ['openai', 'gemini', 'veo', 'kling', 'seedream'].includes(platformParam)
+      ? platformParam
+      : 'openai'
+  );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -130,25 +138,7 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white">API Playground</h1>
-              <p className="text-gray-400 mt-2">각 AI 플랫폼을 테스트해보세요</p>
-            </div>
-            <Link
-              href="/"
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-            >
-              홈으로
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 플랫폼 선택 */}
           <div className="lg:col-span-1">
@@ -449,6 +439,32 @@ export default function PlaygroundPage() {
           </div>
         </div>
       </main>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">API Playground</h1>
+              <p className="text-gray-400 mt-2">각 AI 플랫폼을 테스트해보세요</p>
+            </div>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            >
+              홈으로
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <Suspense fallback={<div className="container mx-auto px-4 py-8 text-white">로딩 중...</div>}>
+        <PlaygroundContent />
+      </Suspense>
     </div>
   );
 }
