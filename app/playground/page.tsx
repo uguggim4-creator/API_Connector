@@ -17,6 +17,7 @@ function PlaygroundContent() {
   }, [modelFromUrl]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [requestBody, setRequestBody] = useState<any>(null);
 
   // OpenAI
   const [openaiAction, setOpenaiAction] = useState<'chat' | 'image'>('chat');
@@ -70,6 +71,7 @@ function PlaygroundContent() {
   const handleSubmit = async () => {
     setLoading(true);
     setResult(null);
+    setRequestBody(null);
 
     try {
       let endpoint = '';
@@ -127,6 +129,8 @@ function PlaygroundContent() {
             console.log(`📸 참조 이미지 ${seedreamReferenceImages.length}개 전송 중...`);
             console.log('이미지 형식:', seedreamReferenceImages[0]?.substring(0, 50) + '...');
           }
+          // Save the request body for display in UI
+          setRequestBody(body);
           break;
 
         case 'veo':
@@ -524,6 +528,18 @@ function PlaygroundContent() {
                       <p className="text-red-300 text-sm font-medium mb-1">오류 상세:</p>
                       <p className="text-red-200 text-sm">{result.error}</p>
                     </div>
+                  )}
+
+                  {/* Seedream 요청 JSON 표시 */}
+                  {selectedPlatform === 'seedream' && requestBody && (
+                    <details className="mb-4">
+                      <summary className="cursor-pointer text-blue-400 text-sm hover:text-blue-300 mb-2 font-medium">
+                        📤 전송한 요청 보기 (JSON)
+                      </summary>
+                      <pre className="text-gray-300 text-sm overflow-x-auto bg-gray-900/50 p-4 rounded border border-gray-600">
+                        {JSON.stringify(requestBody, null, 2)}
+                      </pre>
+                    </details>
                   )}
 
                   {/* Seedream 이미지 결과 표시 */}
