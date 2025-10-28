@@ -6,7 +6,7 @@ export interface SeedreamImageRequest {
   model?: string;
   prompt: string;
   negative_prompt?: string;
-  image_url?: string[];
+  images?: string[];
   mask?: string;
   width?: number;
   height?: number;
@@ -87,7 +87,7 @@ export class SeedreamClient {
 
       // 선택적 파라미터 추가
       if (request.negative_prompt) requestBody.negative_prompt = request.negative_prompt;
-      if (request.image_url) requestBody.image_url = request.image_url;
+      if (request.images) requestBody.images = request.images;
       if (request.mask) requestBody.mask = request.mask;
       if (request.size) requestBody.size = request.size;
       if (request.width) requestBody.width = request.width;
@@ -113,8 +113,8 @@ export class SeedreamClient {
 
       // 디버깅: 요청 바디 로그 (이미지 데이터는 길이만 표시)
       const debugBody = { ...requestBody };
-      if (debugBody.image_url && Array.isArray(debugBody.image_url)) {
-        debugBody.image_url = debugBody.image_url.map((url: string, i: number) =>
+      if (debugBody.images && Array.isArray(debugBody.images)) {
+        debugBody.images = debugBody.images.map((url: string, i: number) =>
           `[이미지 ${i + 1}: ${url.substring(0, 50)}... (길이: ${url.length})]`
         );
       }
