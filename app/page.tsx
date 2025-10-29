@@ -462,6 +462,14 @@ export default function Home() {
     { value: 'start-end-frame', label: '스타트-엔드 프레임' },
   ];
 
+  // Kling state
+  const [klingModelName, setKlingModelName] = useState('kling-v2.1-master');
+  const [klingMode, setKlingMode] = useState('std');
+  const [klingDuration, setKlingDuration] = useState('5');
+  const [klingNegativePrompt, setKlingNegativePrompt] = useState('');
+  const [klingCfgScale, setKlingCfgScale] = useState(0.5);
+  const [klingShowAdvanced, setKlingShowAdvanced] = useState(false);
+
   // Veo 템플릿 변경 시 자동 설정
   useEffect(() => {
     if (vidModel === 'veo') {
