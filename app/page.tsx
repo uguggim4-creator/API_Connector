@@ -1179,6 +1179,112 @@ export default function Home() {
                           </div>
                         )}
 
+                        {/* Kling 전용 파라미터 */}
+                        {vidModel === "kling" && (
+                          <div className="space-y-4 rounded-xl border border-purple-500/30 bg-purple-500/5 p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-semibold text-purple-300">⚙️ Kling 설정</h4>
+                              <button
+                                onClick={() => setKlingShowAdvanced(!klingShowAdvanced)}
+                                className="text-xs px-3 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition-colors"
+                              >
+                                {klingShowAdvanced ? "기본 옵션" : "고급 옵션"}
+                              </button>
+                            </div>
+
+                            {/* 기본 옵션 */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <div className="mb-1 text-gray-300 text-sm">모델</div>
+                                <select
+                                  value={klingModelName}
+                                  onChange={(e) => setKlingModelName(e.target.value)}
+                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
+                                >
+                                  <option value="kling-v2.1-master">Kling v2.1 Master</option>
+                                  <option value="kling-v2.1-standard">Kling v2.1 Standard</option>
+                                  <option value="kling-v2.1-fast">Kling v2.1 Fast</option>
+                                  <option value="kling-v2-master">Kling v2 Master</option>
+                                  <option value="kling-v2-standard">Kling v2 Standard</option>
+                                  <option value="kling-v1.6-master">Kling v1.6 Master</option>
+                                  <option value="kling-v1.6-standard">Kling v1.6 Standard</option>
+                                </select>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-gray-300 text-sm">모드</div>
+                                <select
+                                  value={klingMode}
+                                  onChange={(e) => setKlingMode(e.target.value)}
+                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
+                                >
+                                  <option value="std">Standard</option>
+                                  <option value="pro">Pro</option>
+                                </select>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-gray-300 text-sm">영상 길이</div>
+                                <select
+                                  value={klingDuration}
+                                  onChange={(e) => setKlingDuration(e.target.value)}
+                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
+                                >
+                                  <option value="5">5초</option>
+                                  <option value="10">10초</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* 고급 옵션 */}
+                            {klingShowAdvanced && (
+                              <div className="space-y-4 pt-4 border-t border-purple-500/20">
+                                {/* CFG Scale */}
+                                <div>
+                                  <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-gray-300 text-sm">CFG Scale</span>
+                                    <span className="text-purple-300 text-sm font-mono">{klingCfgScale.toFixed(2)}</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={klingCfgScale}
+                                    onChange={(e) => setKlingCfgScale(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                  />
+                                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>0.0</span>
+                                    <span className="text-gray-400">프롬프트 충실도 조절</span>
+                                    <span>1.0</span>
+                                  </div>
+                                </div>
+
+                                {/* Negative Prompt */}
+                                <div>
+                                  <div className="mb-1 text-gray-300 text-sm">네거티브 프롬프트</div>
+                                  <textarea
+                                    value={klingNegativePrompt}
+                                    onChange={(e) => setKlingNegativePrompt(e.target.value)}
+                                    rows={3}
+                                    className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-3 text-sm"
+                                    placeholder="원하지 않는 요소를 설명하세요 (예: blurry, low quality, distorted)"
+                                  />
+                                </div>
+
+                                {/* 추가 기능 안내 */}
+                                <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
+                                  <div className="text-xs text-blue-300 font-medium mb-1">🔜 준비 중인 기능</div>
+                                  <div className="text-xs text-blue-200/70">
+                                    • Static Mask - 특정 영역 고정<br/>
+                                    • Dynamic Masks - 움직임 경로 지정<br/>
+                                    • Camera Control - 카메라 움직임 제어
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {/* Veo 3.1: 텍스트 to 비디오 */}
                         {vidModel === "veo" && veoTemplate === "text-to-video" && (
                           <div className="rounded-xl border border-white/15 bg-white/5 p-4">
