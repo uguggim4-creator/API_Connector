@@ -31,7 +31,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { platform, apiKey, keyName, projectId, region } = body;
+    const { platform, apiKey, keyName } = body;
 
     if (!platform || !apiKey) {
       return NextResponse.json(
@@ -50,14 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (platform === 'veo' && (!projectId || !region)) {
-      return NextResponse.json(
-        { success: false, error: 'Project ID and Region are required for Veo' },
-        { status: 400 }
-      );
-    }
-
-    const newKey = ApiKeyService.add(platform, apiKey, keyName, projectId, region);
+    const newKey = ApiKeyService.add(platform, apiKey, keyName);
 
     return NextResponse.json({
       success: true,

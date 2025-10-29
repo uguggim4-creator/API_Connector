@@ -123,7 +123,7 @@ export function decryptApiKey(encryptedKey: string): string {
 // API 키 관리 함수들
 export const ApiKeyService = {
   // API 키 추가
-  add(platform: string, apiKey: string, keyName?: string, projectId?: string, region?: string): ApiKey {
+  add(platform: string, apiKey: string, keyName?: string): ApiKey {
     const db = readDb();
     const newKey: ApiKey = {
       id: crypto.randomUUID(),
@@ -132,8 +132,6 @@ export const ApiKeyService = {
       keyName,
       isActive: true,
       createdAt: new Date().toISOString(),
-      projectId,
-      region,
     };
 
     db.apiKeys.push(newKey);
