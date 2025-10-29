@@ -285,18 +285,46 @@ class CometAPIClient {
     height?: number;
     image?: string[];
     image_end?: string[];
+    model_name?: string;
+    mode?: string;
+    cfg_scale?: number;
+    static_mask?: string;
+    dynamic_masks?: Array<{
+      mask: string;
+      trajectories: Array<{ x: number; y: number }>;
+    }>;
   }): Promise<CometAPIResponse> {
     const startTime = Date.now();
     try {
       const bodyData: any = {
-        model_name: 'kling-v2.1-master',
+        model_name: params.model_name || 'kling-v2.1-master',
         duration: params.duration.toString(),
         prompt: params.prompt,
       };
 
+      // mode 추가 (pro, std 등)
+      if (params.mode) {
+        bodyData.mode = params.mode;
+      }
+
       // 스타트 이미지가 있으면 추가
       if (params.image && params.image.length > 0) {
         bodyData.image = params.image[0];
+      }
+
+      // cfg_scale 추가
+      if (params.cfg_scale !== undefined) {
+        bodyData.cfg_scale = params.cfg_scale;
+      }
+
+      // static_mask 추가 (선택적)
+      if (params.static_mask) {
+        bodyData.static_mask = params.static_mask;
+      }
+
+      // dynamic_masks 추가 (선택적)
+      if (params.dynamic_masks && params.dynamic_masks.length > 0) {
+        bodyData.dynamic_masks = params.dynamic_masks;
       }
 
       const response = await fetch(`${this.baseUrl}/kling/v1/videos/image2video`, {
