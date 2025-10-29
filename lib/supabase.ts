@@ -27,12 +27,14 @@ function getSupabaseClient(): SupabaseClient | null {
  * @param file - File buffer to upload
  * @param filename - Name of the file
  * @param bucketName - Storage bucket name (default: 'seedream-images')
+ * @param contentType - MIME type to store (default: 'image/png')
  * @returns Public URL of the uploaded image
  */
 export async function uploadImageToSupabase(
   file: Buffer,
   filename: string,
-  bucketName: string = 'seedream-images'
+  bucketName: string = 'seedream-images',
+  contentType?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const supabase = getSupabaseClient();
@@ -48,7 +50,7 @@ export async function uploadImageToSupabase(
     const { data, error } = await supabase.storage
       .from(bucketName)
       .upload(filename, file, {
-        contentType: 'image/png', // or detect from filename
+        contentType: contentType || 'image/png',
         cacheControl: '3600',
         upsert: false,
       });

@@ -53,13 +53,13 @@ export async function POST(request: NextRequest) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${timestamp}-${safeName}`;
 
-    // Supabase에 업로드
+    // Supabase에 업로드 (fallback 제거, 실패 시 에러 반환)
     const bucketName = process.env.SUPABASE_BUCKET_NAME || 'seedream-images';
-    const result = await uploadImageToSupabase(buffer, filename, bucketName);
+    const result = await uploadImageToSupabase(buffer, filename, bucketName, file.type);
 
-    if (!result.success) {
+    if (!result.success || !result.url) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: result.error || 'Failed to upload to Supabase (check SUPABASE_URL / SUPABASE_ANON_KEY / bucket)' },
         { status: 500 }
       );
     }

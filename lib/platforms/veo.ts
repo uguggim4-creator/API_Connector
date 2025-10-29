@@ -7,98 +7,80 @@ export interface VeoVideoRequest {
   duration?: number; // seconds
   resolution?: '720p' | '1080p';
   aspectRatio?: '16:9' | '9:16' | '1:1';
+  image?: string; // Image URL
 }
 
 export class VeoClient {
   private apiKey: string | null = null;
-  private baseUrl: string = 'https://generativelanguage.googleapis.com/v1beta';
+  private projectId: string | null = null;
+  private region: string | null = null;
 
   constructor() {
     this.initClient();
   }
 
   private initClient() {
-    const apiKey = ApiKeyService.getActive('veo');
-    if (!apiKey) {
+    const apiKeyData = ApiKeyService.getActive('veo');
+    if (!apiKeyData) {
       return;
     }
 
     try {
-      this.apiKey = decryptApiKey(apiKey.encryptedKey);
+      this.apiKey = decryptApiKey(apiKeyData.encryptedKey);
+      this.projectId = apiKeyData.projectId || null;
+      this.region = apiKeyData.region || null;
     } catch (error) {
       console.error('Failed to initialize Veo client:', error);
     }
   }
 
   async generateVideo(request: VeoVideoRequest) {
-    if (!this.apiKey) {
-      throw new Error('Veo client not initialized. Please add an API key.');
+    if (!this.apiKey || !this.projectId || !this.region) {
+      throw new Error('Veo client not initialized. Please add an API key, Project ID, and Region in settings.');
     }
 
     const startTime = Date.now();
+    const url = `https://${this.region}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.region}/publishers/google/models/veo-3.1-generate-preview:generateVideos`;
 
     try {
-      // Gemini API를 통한 Veo 3.1 호출
-      const response = await axios.post(
-        `${this.baseUrl}/models/veo-3.1:generateVideo?key=${this.apiKey}`,
-        {
-          prompt: request.prompt,
-          videoConfig: {
-            duration: request.duration || 10,
-            resolution: request.resolution || '1080p',
-            aspectRatio: request.aspectRatio || '16:9',
+      const requestBody: any = {
+        generateVideosRequest: {
+          prompt: {
+            text: request.prompt,
+          },
+          videoGenerationConfig: {
+            aspectRatio: request.aspectRatio?.replace(':', '_') || '16_9',
+            durationSeconds: request.duration || 8,
           },
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      };
+
+      if (request.image) {
+        // Assuming the API takes an image URL. The documentation is not super clear on the format.
+        // This part might need adjustment based on the exact API spec.
+        requestBody.generateVideosRequest.prompt.image = {
+            source: {
+                gcsUri: request.image
+            }
         }
-      );
-
-      // 작업 ID 가져오기
-      const operationId = response.data.name;
-
-      // 작업 완료 대기 (폴링)
-      let attempts = 0;
-      const maxAttempts = 120; // 최대 10분 대기
-
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // 5초 대기
-
-        const statusResponse = await axios.get(
-          `${this.baseUrl}/${operationId}?key=${this.apiKey}`
-        );
-
-        if (statusResponse.data.done) {
-          const duration = Date.now() - startTime;
-
-          if (statusResponse.data.error) {
-            return {
-              success: false,
-              error: statusResponse.data.error.message,
-              duration,
-            };
-          }
-
-          return {
-            success: true,
-            data: statusResponse.data.response,
-            duration,
-          };
-        }
-
-        attempts++;
       }
+
+      const response = await axios.post(url, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+      });
 
       const duration = Date.now() - startTime;
       return {
-        success: false,
-        error: 'Video generation timeout',
+        success: true,
+        data: response.data,
         duration,
       };
     } catch (error: any) {
       const duration = Date.now() - startTime;
+      console.error('Veo API Error:', error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.error?.message || error.message || 'Unknown error',
@@ -108,7 +90,7 @@ export class VeoClient {
   }
 
   isConfigured(): boolean {
-    return this.apiKey !== null;
+    return this.apiKey !== null && this.projectId !== null && this.region !== null;
   }
 }
 

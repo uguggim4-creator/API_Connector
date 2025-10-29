@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'video':
-        endpoint = '/models/veo-3.1:generateVideo';
+        endpoint = '/publishers/google/models/veo-3.1-generate-preview:generateVideos';
         result = await veoClient.generateVideo(params);
         break;
 
