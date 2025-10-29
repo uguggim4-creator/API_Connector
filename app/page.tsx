@@ -23,8 +23,8 @@ const initialCards: CardMeta[] = [
   {
     id: "videos",
     title: "비디오 툴",
-    subtitle: "Kling · Veo 3.1 · Sora 2",
-    tools: ["Kling", "Veo 3.1", "Sora 2"],
+    subtitle: "Kling · Veo 3.1 · Sora 2 · Midjourney",
+    tools: ["Kling", "Veo 3.1", "Sora 2", "Midjourney"],
     depth: 10,
   },
   {
@@ -620,6 +620,14 @@ export default function Home() {
             }
             break;
         }
+      } else if (vidModel === "midjourney") {
+        // Midjourney 비디오 - 스타트 이미지가 있으면 이미지 URL을 프롬프트에 포함
+        if (vidStart) {
+          body.prompt = `${vidStart} ${vidPrompt}`;
+        }
+        body.videoType = "vid_1.1_i2v_480"; // 기본 비디오 타입
+        body.mode = "fast";
+        body.animateMode = "manual";
       } else {
         // 다른 모델 (Kling, Sora)
         if (vidStart) body.image = [vidStart];
@@ -1119,6 +1127,7 @@ export default function Home() {
                               <option value="kling">Kling</option>
                               <option value="veo">Veo 3.1</option>
                               <option value="sora">Sora 2</option>
+                              <option value="midjourney">Midjourney</option>
                             </select>
                           </div>
                           <div>

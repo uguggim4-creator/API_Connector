@@ -24,6 +24,11 @@ export async function POST(request: NextRequest) {
         result = await cometAPIClient.generateMidjourneyImage(params);
         break;
 
+      case 'video':
+        endpoint = '/mj/submit/video';
+        result = await cometAPIClient.generateMidjourneyVideo(params);
+        break;
+
       default:
         return NextResponse.json(
           { success: false, error: 'Invalid action' },

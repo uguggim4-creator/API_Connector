@@ -337,9 +337,41 @@ class CometAPIClient {
   async generateMidjourneyImage(params: {
     prompt: string;
     mode?: string;
+    aspect_ratio?: string;
+    version?: string;
+    style?: string;
+    stylize?: number;
+    chaos?: number;
+    no?: string;
+    weird?: number;
   }): Promise<CometAPIResponse> {
     const startTime = Date.now();
     try {
+      // 프롬프트에 Midjourney 파라미터 추가
+      let enhancedPrompt = params.prompt;
+      
+      if (params.aspect_ratio) {
+        enhancedPrompt += ` --ar ${params.aspect_ratio}`;
+      }
+      if (params.version) {
+        enhancedPrompt += ` --v ${params.version}`;
+      }
+      if (params.style) {
+        enhancedPrompt += ` --style ${params.style}`;
+      }
+      if (params.stylize !== undefined) {
+        enhancedPrompt += ` --s ${params.stylize}`;
+      }
+      if (params.chaos !== undefined) {
+        enhancedPrompt += ` --chaos ${params.chaos}`;
+      }
+      if (params.no) {
+        enhancedPrompt += ` --no ${params.no}`;
+      }
+      if (params.weird !== undefined) {
+        enhancedPrompt += ` --weird ${params.weird}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/mj/submit/imagine`, {
         method: 'POST',
         headers: {
@@ -348,7 +380,7 @@ class CometAPIClient {
         },
         body: JSON.stringify({
           botType: 'MID_JOURNEY',
-          prompt: params.prompt,
+          prompt: enhancedPrompt,
           accountFilter: {
             modes: [params.mode || 'FAST']
           }
@@ -362,6 +394,54 @@ class CometAPIClient {
         return {
           success: false,
           error: data.error?.message || 'Midjourney image generation failed',
+          duration,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        duration,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  // Midjourney 비디오 생성
+  async generateMidjourneyVideo(params: {
+    prompt: string;
+    videoType?: string;
+    mode?: string;
+    animateMode?: string;
+  }): Promise<CometAPIResponse> {
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`${this.baseUrl}/mj/submit/video`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: params.prompt,
+          videoType: params.videoType || 'vid_1.1_i2v_480',
+          mode: params.mode || 'fast',
+          animateMode: params.animateMode || 'manual',
+        }),
+      });
+
+      const data = await response.json();
+      const duration = Date.now() - startTime;
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error?.message || 'Midjourney video generation failed',
           duration,
         };
       }
