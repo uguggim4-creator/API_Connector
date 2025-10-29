@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'image':
-        endpoint = '/v1/images/generations';
+        endpoint = '/v1beta/models/gemini-2.5-flash-image-preview:generateContent';
         result = await cometAPIClient.generateNanobananaImage(params);
         break;
 

@@ -187,7 +187,7 @@ class CometAPIClient {
     }
   }
 
-  // Nanobanana 이미지 생성
+  // Nanobanana 이미지 생성 (Gemini 2.5 Flash 사용)
   async generateNanobananaImage(params: {
     prompt: string;
     width: number;
@@ -196,18 +196,18 @@ class CometAPIClient {
   }): Promise<CometAPIResponse> {
     const startTime = Date.now();
     try {
-      const response = await fetch(`${this.baseUrl}/v1/images/generations`, {
+      const response = await fetch(`${this.baseUrl}/v1beta/models/gemini-2.5-flash-image-preview:generateContent`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': this.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'nanobanana-v1',
-          prompt: params.prompt,
-          n: params.n,
-          size: `${params.width}x${params.height}`,
-          response_format: 'url',
+          contents: [{
+            parts: [
+              { text: params.prompt }
+            ]
+          }]
         }),
       });
 
@@ -236,31 +236,35 @@ class CometAPIClient {
     }
   }
 
-  // Kling 영상 생성
+  // Kling 영상 생성 (image2video)
   async generateKlingVideo(params: {
     prompt: string;
     duration: number;
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
     image?: string[];
     image_end?: string[];
   }): Promise<CometAPIResponse> {
     const startTime = Date.now();
     try {
-      const response = await fetch(`${this.baseUrl}/v1/videos/generations`, {
+      const bodyData: any = {
+        model_name: 'kling-v2.1-master',
+        duration: params.duration.toString(),
+        prompt: params.prompt,
+      };
+
+      // 스타트 이미지가 있으면 추가
+      if (params.image && params.image.length > 0) {
+        bodyData.image = params.image[0];
+      }
+
+      const response = await fetch(`${this.baseUrl}/kling/v1/videos/image2video`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'kling-v1',
-          prompt: params.prompt,
-          duration: params.duration,
-          size: `${params.width}x${params.height}`,
-          image: params.image,
-          image_end: params.image_end,
-        }),
+        body: JSON.stringify(bodyData),
       });
 
       const data = await response.json();
@@ -270,6 +274,53 @@ class CometAPIClient {
         return {
           success: false,
           error: data.error?.message || 'Kling video generation failed',
+          duration,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        duration,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  // Midjourney 이미지 생성
+  async generateMidjourneyImage(params: {
+    prompt: string;
+    mode?: string;
+  }): Promise<CometAPIResponse> {
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`${this.baseUrl}/mj/submit/imagine`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botType: 'MID_JOURNEY',
+          prompt: params.prompt,
+          accountFilter: {
+            modes: [params.mode || 'FAST']
+          }
+        }),
+      });
+
+      const data = await response.json();
+      const duration = Date.now() - startTime;
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error?.message || 'Midjourney image generation failed',
           duration,
         };
       }

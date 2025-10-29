@@ -16,8 +16,8 @@ const initialCards: CardMeta[] = [
   {
     id: "images",
     title: "이미지 툴",
-    subtitle: "Nanobanana · Seedream",
-    tools: ["Nanobanana", "Seedream"],
+    subtitle: "Nanobanana · Seedream · Midjourney",
+    tools: ["Nanobanana", "Seedream", "Midjourney"],
     depth: 14,
   },
   {
@@ -51,6 +51,8 @@ const PRICING: PricingInfo[] = [
   { model: "veo-standard", price: 0.40, unit: "초", description: "Veo 3.1 Standard" },
   { model: "veo-fast", price: 0.15, unit: "초", description: "Veo 3.1 Fast" },
   { model: "nanobanana", price: 0.039, unit: "장", description: "Nanobanana" },
+  { model: "midjourney", price: 0.04, unit: "장", description: "Midjourney" },
+  { model: "kling", price: 0, unit: "초", description: "Kling (가격 미정)" },
 ];
 
 export default function Home() {
@@ -383,14 +385,25 @@ export default function Home() {
       const body: any = {
         action: "image",
         prompt: finalPrompt,
-        model: imgModel === "seedream" ? "seedream-4-0-250828" : "nanobanana-v1",
-        width: r.width,
-        height: r.height,
-        response_format: "url",
-        n: parsedCount,
-        watermark: false,
       };
-      if (imgRefs.length) body.image = imgRefs;
+
+      // 모델별 파라미터 설정
+      if (imgModel === "seedream") {
+        body.model = "seedream-4-0-250828";
+        body.width = r.width;
+        body.height = r.height;
+        body.response_format = "url";
+        body.n = parsedCount;
+        body.watermark = false;
+        if (imgRefs.length) body.image = imgRefs;
+      } else if (imgModel === "nanobanana") {
+        body.width = r.width;
+        body.height = r.height;
+        body.n = parsedCount;
+      } else if (imgModel === "midjourney") {
+        body.mode = "FAST"; // FAST 또는 RELAX
+      }
+
       const res = await fetch(`/api/platforms/${imgModel}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -692,6 +705,11 @@ export default function Home() {
           modelKey = "nanobanana";
           cost = imageCount * 0.039;
           unit = "장";
+        } else if (req.mode === "FAST" || req.mode === "RELAX") {
+          // Midjourney (mode 파라미터로 판별)
+          modelKey = "midjourney";
+          cost = imageCount * 0.04;
+          unit = "장";
         }
       }
       // 비디오 모델 처리
@@ -969,6 +987,7 @@ export default function Home() {
                             <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
                               <option value="seedream">Seedream 4.0</option>
                               <option value="nanobanana">Nanobanana</option>
+                              <option value="midjourney">Midjourney</option>
                             </select>
                           </div>
                           <div>
