@@ -339,24 +339,7 @@ function PlaygroundContent() {
     }
   };
 
-  // 플랫폼별 탭 매핑
-  const getPlatformTabs = () => {
-    switch (selectedPlatform) {
-      case 'openai':
-        return openaiAction === 'image' ? ['image'] : ['image'];
-      case 'gemini':
-        return ['image'];
-      case 'seedream':
-        return ['image'];
-      case 'kling':
-      case 'veo':
-        return ['video'];
-      default:
-        return ['image'];
-    }
-  };
-
-  const availableTabs = getPlatformTabs();
+  const availableTabs = ['image', 'video'];
   const currentTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
 
   return (
@@ -365,14 +348,8 @@ function PlaygroundContent() {
       <header className="relative z-10">
         <div className="container mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">AI Studio</h1>
-            </div>
-            <Link
-              href="/landing"
-              className="px-6 py-3 bg-white text-black rounded-xl hover:bg-gray-100 transition-all duration-300 font-medium"
-            >
-              Home
+            <Link href="/landing">
+              <h1 className="text-4xl font-bold text-white mb-2 cursor-pointer">BeO.</h1>
             </Link>
           </div>
         </div>
@@ -380,121 +357,27 @@ function PlaygroundContent() {
 
       <main className="container mx-auto px-6 pb-12">
         <div className="space-y-8">
-          {/* 1. 모델 선택 섹션 - 드롭다운으로 최소화 */}
+          
+          {/* Unified Creation Banner */}
           <section className="relative">
-            <div className="bg-white rounded-2xl p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-black">Model</h2>
-                <select
-                  value={selectedPlatform}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black font-medium"
-                >
-                  <option value="openai">OpenAI</option>
-                  <option value="gemini">Google Gemini</option>
-                  <option value="seedream">Seedream 4.0</option>
-                  <option value="kling">Kling AI</option>
-                  <option value="veo">Google Veo 3.1</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          {/* 2. 참조 이미지 섹션 */}
-          <section className="relative">
-            <div className="bg-white rounded-2xl p-8 shadow-xl">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-black mb-2">Reference Images</h2>
-              </div>
-
-              {/* 이미지 업로드 영역 */}
-              <div className="mb-6">
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-black transition-colors">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer block"
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              
+              {/* Top Section: Model and Tabs */}
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-xl font-semibold text-black mb-2">Model Selection</h2>
+                  <select
+                    value={selectedPlatform}
+                    onChange={(e) => setSelectedPlatform(e.target.value)}
+                    className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black font-medium"
                   >
-                    <div className="text-6xl mb-4 text-gray-400">+</div>
-                    <p className="text-gray-600 mb-2">Click to upload images</p>
-                    <p className="text-sm text-gray-500">JPEG, PNG (max 10MB)</p>
-                  </label>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="seedream">Seedream 4.0</option>
+                    <option value="kling">Kling AI</option>
+                    <option value="veo">Google Veo 3.1</option>
+                  </select>
                 </div>
-              </div>
-
-              {/* 업로드된 이미지 그리드 - 꽉 차도록 수정 */}
-              {seedreamReferenceImages.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-black mb-4">Uploaded Images</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {seedreamReferenceImages.map((url, index) => (
-                      <div key={index} className="relative group aspect-square">
-                        <img
-                          src={url}
-                          alt={`참조 이미지 ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => removeReferenceImage(index)}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* URL 입력 섹션 */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-black">Add Image URL</h3>
-                  <button
-                    onClick={handleAddImageUrl}
-                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    + Add URL
-                  </button>
-                </div>
-                
-                {seedreamReferenceImages.map((url, index) => (
-                  <div key={index} className="flex gap-3">
-                    <input
-                      type="text"
-                      value={url}
-                      onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                    />
-                    <button
-                      onClick={() => removeReferenceImage(index)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* 3. 작업 탭 섹션 - 하나의 배너로 통합 */}
-          <section className="relative">
-            <div className="bg-white rounded-2xl p-8 shadow-xl">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-semibold text-black mb-2">Create</h2>
-              </div>
-
-              {/* 탭 선택 */}
-              <div className="flex justify-center mb-8">
                 <div className="bg-gray-100 rounded-xl p-1">
                   {availableTabs.map((tab) => (
                     <button
@@ -512,214 +395,107 @@ function PlaygroundContent() {
                 </div>
               </div>
 
-              {/* 설정 폼 */}
-              <div className="max-w-2xl mx-auto">
-                {selectedPlatform === 'openai' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-black font-medium mb-2">Action</label>
-                      <select
-                        value={openaiAction}
-                        onChange={(e) => setOpenaiAction(e.target.value as 'chat' | 'image')}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                      >
-                        <option value="chat">Text Generation</option>
-                        <option value="image">Image Generation</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-black font-medium mb-2">Model</label>
-                      <select
-                        value={openaiModel}
-                        onChange={(e) => setOpenaiModel(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                      >
-                        <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        <option value="dall-e-3">DALL-E 3</option>
-                        <option value="dall-e-2">DALL-E 2</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-black font-medium mb-2">Prompt</label>
-                      <textarea
-                        value={openaiPrompt}
-                        onChange={(e) => setOpenaiPrompt(e.target.value)}
-                        placeholder="Enter your prompt..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                      />
-                    </div>
+              {/* Middle Section: Reference Image & Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                
+                {/* Left: Reference Images */}
+                <div>
+                  <h2 className="text-xl font-semibold text-black mb-4">첨부 이미지</h2>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-black transition-colors mb-4">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer block">
+                      <div className="text-4xl mb-2 text-gray-400">+</div>
+                      <p className="text-gray-600 text-sm">Click to upload</p>
+                    </label>
                   </div>
-                )}
+                  {seedreamReferenceImages.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {seedreamReferenceImages.map((url, index) => (
+                        <div key={index} className="relative group aspect-square">
+                          <img
+                            src={url}
+                            alt={`Reference ${index + 1}`}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                          <button
+                            onClick={() => removeReferenceImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                {selectedPlatform === 'gemini' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-black font-medium mb-2">Model</label>
-                      <select
-                        value={geminiModel}
-                        onChange={(e) => setGeminiModel(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                      >
-                        <option value="gemini-pro">Gemini Pro</option>
-                        <option value="gemini-pro-vision">Gemini Pro Vision</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-black font-medium mb-2">Prompt</label>
-                      <textarea
-                        value={geminiPrompt}
-                        onChange={(e) => setGeminiPrompt(e.target.value)}
-                        placeholder="Enter your prompt..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                      />
-                    </div>
+                {/* Right: Settings */}
+                <div>
+                  <h2 className="text-xl font-semibold text-black mb-4">설정탭</h2>
+                  <div className="space-y-4">
+                    {selectedPlatform === 'seedream' && (
+                      <>
+                        <div>
+                          <label className="block text-black font-medium text-sm mb-1">Resolution</label>
+                          <select
+                            value={seedreamAspectRatio}
+                            onChange={(e) => setSeedreamAspectRatio(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black text-sm"
+                          >
+                            <option value="1:1">1:1</option>
+                            <option value="16:9">16:9</option>
+                            <option value="9:16">9:16</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-black font-medium text-sm mb-1">Response Format</label>
+                           <select
+                            value={seedreamResponseFormat}
+                            onChange={(e) => setSeedreamResponseFormat(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black text-sm"
+                          >
+                            <option value="url">URL</option>
+                            <option value="base64">Base64</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+                    {selectedPlatform !== 'seedream' && (
+                       <p className="text-gray-500 text-sm">Settings for {selectedPlatform} will appear here.</p>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {selectedPlatform === 'seedream' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-black font-medium mb-2">Prompt</label>
-                      <textarea
-                        value={seedreamPrompt}
-                        onChange={(e) => setSeedreamPrompt(e.target.value)}
-                        placeholder="Describe the image you want to create..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                      />
-                    </div>
+              </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-black font-medium mb-2">Model</label>
-                        <select
-                          value={seedreamModel}
-                          onChange={(e) => setSeedreamModel(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                        >
-                          <option value="seedream-4-0-250828">Seedream 4.0</option>
-                          <option value="ByteDance-Seed/Seedream-4.0">Seedream 4.0 Alt</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-black font-medium mb-2">Resolution</label>
-                        <select
-                          value={seedreamAspectRatio}
-                          onChange={(e) => setSeedreamAspectRatio(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                        >
-                          <option value="1:1">1:1 (2048x2048)</option>
-                          <option value="4:3">4:3 (2304x1728)</option>
-                          <option value="3:4">3:4 (1728x2304)</option>
-                          <option value="16:9">16:9 (2560x1440)</option>
-                          <option value="9:16">9:16 (1440x2560)</option>
-                          <option value="3:2">3:2 (2496x1664)</option>
-                          <option value="2:3">2:3 (1664x2496)</option>
-                          <option value="21:9">21:9 (3024x1296)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-black font-medium mb-2">Response Format</label>
-                        <select
-                          value={seedreamResponseFormat}
-                          onChange={(e) => setSeedreamResponseFormat(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                        >
-                          <option value="url">URL</option>
-                          <option value="base64">Base64</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-black font-medium mb-2">Sequential Generation</label>
-                        <select
-                          value={seedreamSequentialGeneration}
-                          onChange={(e) => setSeedreamSequentialGeneration(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                        >
-                          <option value="disabled">Disabled</option>
-                          <option value="enabled">Enabled</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="seedream-watermark"
-                        checked={seedreamWatermark}
-                        onChange={(e) => setSeedreamWatermark(e.target.checked)}
-                        className="w-5 h-5 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
-                      />
-                      <label htmlFor="seedream-watermark" className="ml-3 text-black font-medium">
-                        Show Watermark
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPlatform === 'kling' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-black font-medium mb-2">Prompt</label>
-                      <textarea
-                        value={klingPrompt}
-                        onChange={(e) => setKlingPrompt(e.target.value)}
-                        placeholder="Describe the video you want to create..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-black font-medium mb-2">Duration (seconds)</label>
-                      <select
-                        value={klingDuration}
-                        onChange={(e) => setKlingDuration(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                      >
-                        <option value={5}>5 seconds</option>
-                        <option value={10}>10 seconds</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPlatform === 'veo' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-black font-medium mb-2">Prompt</label>
-                      <textarea
-                        value={veoPrompt}
-                        onChange={(e) => setVeoPrompt(e.target.value)}
-                        placeholder="Describe the video you want to create..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-black font-medium mb-2">Duration (seconds)</label>
-                      <input
-                        type="number"
-                        value={veoDuration}
-                        onChange={(e) => setVeoDuration(Number(e.target.value))}
-                        min={5}
-                        max={60}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center mt-8">
+              {/* Bottom Section: Prompt and Create Button */}
+              <div>
+                <textarea
+                  placeholder="Enter your prompt here..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500 mb-4"
+                  onChange={(e) => {
+                    // This needs to update the correct prompt based on the selected platform
+                    // This is a simplified logic. In a real app, this would be more robust.
+                    if (selectedPlatform === 'seedream') setSeedreamPrompt(e.target.value);
+                    if (selectedPlatform === 'openai') setOpenaiPrompt(e.target.value);
+                    if (selectedPlatform === 'gemini') setGeminiPrompt(e.target.value);
+                    if (selectedPlatform === 'kling') setKlingPrompt(e.target.value);
+                    if (selectedPlatform === 'veo') setVeoPrompt(e.target.value);
+                  }}
+                />
+                <div className="text-center">
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="px-8 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    className="px-10 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:bg-gray-800 disabled:opacity-50 transition-all"
                   >
                     {loading ? 'Creating...' : 'CREATE'}
                   </button>
@@ -728,72 +504,29 @@ function PlaygroundContent() {
             </div>
           </section>
 
-          {/* 4. 결과물 섹션 */}
+          {/* Result Section */}
           {result && (
             <section className="relative">
               <div className="bg-white rounded-2xl p-8 shadow-xl">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-semibold text-black mb-2">Result</h2>
-                </div>
-
-                <div className={`p-6 rounded-xl ${result.success ? 'bg-green-50' : 'bg-red-50'}`}>
-                  <div className="flex items-center justify-center gap-3 mb-6">
-                    <span className={`text-lg font-semibold ${result.success ? 'text-green-600' : 'text-red-600'}`}>
-                      {result.success ? '✓ Created Successfully' : '✗ Creation Failed'}
-                    </span>
-                    {result.duration && (
-                      <span className="text-gray-500 text-sm">
-                        ({result.duration}ms)
-                      </span>
-                    )}
-                  </div>
-
-                  {!result.success && result.error && (
-                    <div className="mb-6 p-4 bg-red-100 border border-red-200 rounded-lg">
-                      <p className="text-red-700 font-medium mb-1">Error Details:</p>
-                      <p className="text-red-600 text-sm">{result.error}</p>
+                <h2 className="text-2xl font-semibold text-black mb-4 text-center">결과물</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {result.success && result.data?.data?.map((image: any, index: number) => (
+                    <div key={index} className="bg-gray-100 rounded-xl overflow-hidden aspect-square">
+                      <img
+                        src={image.url || (image.b64_json ? `data:image/png;base64,${image.b64_json}` : '')}
+                        alt={`Generated image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  )}
-
-                  {selectedPlatform === 'seedream' && result.success && result.data?.data && (
-                    <div className="mb-6">
-                      <h3 className="text-xl font-semibold text-black mb-4 text-center">Generated Images</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {result.data.data.map((image: any, index: number) => (
-                          <div key={index} className="bg-gray-100 rounded-xl overflow-hidden">
-                            <img
-                              src={image.url || (image.b64_json ? `data:image/png;base64,${image.b64_json}` : '')}
-                              alt={`Generated image ${index + 1}`}
-                              className="w-full h-auto"
-                            />
-                            <div className="p-4 flex justify-between items-center">
-                              <span className="text-gray-600 font-medium">Image {index + 1}</span>
-                              <a
-                                href={image.url || `data:image/png;base64,${image.b64_json}`}
-                                download={`seedream-${Date.now()}-${index + 1}.png`}
-                                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-                              >
-                                Download
-                              </a>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <details className="mt-6">
-                    <summary className="cursor-pointer text-gray-600 text-sm hover:text-black mb-3 font-medium text-center">
-                      View Full Response (JSON)
-                    </summary>
-                    <pre className="text-gray-700 text-sm overflow-x-auto bg-gray-100 p-4 rounded-lg border border-gray-300">
-                      {JSON.stringify(result, null, 2)}
-                    </pre>
-                  </details>
+                  ))}
                 </div>
+                {!result.success && (
+                  <p className="text-red-500 text-center">{result.error}</p>
+                )}
               </div>
             </section>
           )}
+
         </div>
       </main>
     </div>
