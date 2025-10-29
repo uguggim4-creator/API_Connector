@@ -79,6 +79,31 @@ export default function Home() {
   const lastAutoMoveAt = useRef<number>(0);
   const DRAG_MIME = "text/uri-list";
 
+  // Drag preview state (follows mouse cursor)
+  const [dragPreview, setDragPreview] = useState<{ x: number; y: number; imageUrl: string } | null>(null);
+
+  // Video modal state
+  const [videoModal, setVideoModal] = useState<{ url: string; prompt?: string } | null>(null);
+
+  // Download function for images and videos
+  const downloadMedia = async (url: string, filename?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || url.split('/').pop() || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('다운로드 중 오류가 발생했습니다.');
+    }
+  };
+
   function isImageDrag(dt: DataTransfer | null): boolean {
     if (!dt) return false;
     const types = Array.from(dt.types as any as string[]);
@@ -281,6 +306,10 @@ export default function Home() {
   const [vidStart, setVidStart] = useState<string | null>(null);
   const [vidEnd, setVidEnd] = useState<string | null>(null);
   const [vidLoading, setVidLoading] = useState(false);
+  const [veoRefUploadLoading, setVeoRefUploadLoading] = useState(false);
+  const [veoSourceVideoLoading, setVeoSourceVideoLoading] = useState(false);
+  const [veoStartFrameLoading, setVeoStartFrameLoading] = useState(false);
+  const [veoEndFrameLoading, setVeoEndFrameLoading] = useState(false);
 
   // Veo 3.1 template state
   const [veoTemplate, setVeoTemplate] = useState<'text-to-video' | 'reference-images' | 'video-extension' | 'start-end-frame'>('text-to-video');
@@ -335,12 +364,14 @@ export default function Home() {
 
   const handleSingleImage = async (
     file: File | null,
-    setUrl: (u: string) => void
+    setUrl: (u: string) => void,
+    setLoading?: (loading: boolean) => void
   ) => {
     if (!file) return;
     const allow = ["image/jpeg", "image/jpg", "image/png"];
     if (!allow.includes(file.type.toLowerCase())) return;
     if (file.size > 10 * 1024 * 1024) return;
+    if (setLoading) setLoading(true);
     const fd = new FormData();
     fd.append("file", file);
     try {
@@ -348,10 +379,14 @@ export default function Home() {
       const j = await r.json();
       if (j.success && j.url) setUrl(j.url);
     } catch {}
+    finally {
+      if (setLoading) setLoading(false);
+    }
   };
 
   const handleVeoRefImages = async (files: FileList | null) => {
     if (!files) return;
+    setVeoRefUploadLoading(true);
     const allow = ["image/jpeg", "image/jpg", "image/png"];
     for (const f of Array.from(files)) {
       if (!allow.includes(f.type.toLowerCase())) continue;
@@ -368,6 +403,7 @@ export default function Home() {
         if (j.success && j.url) setVeoRefImages((p) => [...p, j.url]);
       } catch {}
     }
+    setVeoRefUploadLoading(false);
   };
 
   const handleVeoSourceVideo = async (file: File | null) => {
@@ -375,6 +411,7 @@ export default function Home() {
     const allow = ["video/mp4", "video/webm", "video/quicktime"];
     if (!allow.includes(file.type.toLowerCase())) return;
     if (file.size > 100 * 1024 * 1024) return; // 100MB limit
+    setVeoSourceVideoLoading(true);
     const fd = new FormData();
     fd.append("file", file);
     try {
@@ -382,6 +419,9 @@ export default function Home() {
       const j = await r.json();
       if (j.success && j.url) setVeoSourceVideo(j.url);
     } catch {}
+    finally {
+      setVeoSourceVideoLoading(false);
+    }
   };
 
   const generateVideo = async () => {
@@ -649,15 +689,20 @@ export default function Home() {
                                     onDragStart={(e) => {
                                       e.dataTransfer.setData(DRAG_MIME, u);
                                       e.dataTransfer.effectAllowed = "copy";
-                                      // Create smaller drag image preview
-                                      const dragImg = new Image();
-                                      dragImg.src = u;
-                                      dragImg.style.width = "60px";
-                                      dragImg.style.height = "60px";
-                                      dragImg.style.objectFit = "cover";
-                                      dragImg.style.borderRadius = "8px";
-                                      dragImg.style.opacity = "0.9";
-                                      e.dataTransfer.setDragImage(dragImg, 30, 30);
+                                      // Set drag preview to follow cursor
+                                      setDragPreview({ x: e.clientX, y: e.clientY, imageUrl: u });
+                                      // Hide default drag image
+                                      const emptyImg = new Image();
+                                      emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                                      e.dataTransfer.setDragImage(emptyImg, 0, 0);
+                                    }}
+                                    onDrag={(e) => {
+                                      if (e.clientX !== 0 && e.clientY !== 0) {
+                                        setDragPreview((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+                                      }
+                                    }}
+                                    onDragEnd={() => {
+                                      setDragPreview(null);
                                     }}
                                     className="aspect-square w-full object-cover rounded-md border border-white/15 cursor-grab active:cursor-grabbing"
                                   />
@@ -767,9 +812,16 @@ export default function Home() {
                           <div>
                             <div className="mb-2 font-medium">참조 이미지 (최대 3개)</div>
                             <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
-                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                업로드
-                                <input type="file" accept="image/jpeg,image/jpg,image/png" multiple className="hidden" onChange={(e) => handleVeoRefImages(e.target.files)} />
+                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white disabled:opacity-50">
+                                {veoRefUploadLoading ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    업로드 중...
+                                  </>
+                                ) : (
+                                  "업로드"
+                                )}
+                                <input type="file" accept="image/jpeg,image/jpg,image/png" multiple className="hidden" onChange={(e) => handleVeoRefImages(e.target.files)} disabled={veoRefUploadLoading} />
                               </label>
                               <div className="mt-2 text-xs text-gray-400">
                                 드레스, 선글라스, 인물 등 비디오에 포함시킬 요소의 이미지를 업로드하세요.
@@ -798,9 +850,16 @@ export default function Home() {
                           <div>
                             <div className="mb-2 font-medium">소스 비디오</div>
                             <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
-                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                업로드
-                                <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={(e) => handleVeoSourceVideo(e.target.files?.[0] || null)} />
+                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white disabled:opacity-50">
+                                {veoSourceVideoLoading ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    업로드 중...
+                                  </>
+                                ) : (
+                                  "업로드"
+                                )}
+                                <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={(e) => handleVeoSourceVideo(e.target.files?.[0] || null)} disabled={veoSourceVideoLoading} />
                               </label>
                               <div className="mt-2 text-xs text-gray-400">
                                 연장할 Veo 비디오를 업로드하세요. 프롬프트에 다음 장면을 설명하세요.
@@ -839,9 +898,16 @@ export default function Home() {
                               >
                                 <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
                                   <div className="mb-2 text-sm font-medium">스타트 프레임</div>
-                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                    업로드
-                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoStartFrame(u))} />
+                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white disabled:opacity-50">
+                                    {veoStartFrameLoading ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        업로드 중...
+                                      </>
+                                    ) : (
+                                      "업로드"
+                                    )}
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoStartFrame(u), setVeoStartFrameLoading)} disabled={veoStartFrameLoading} />
                                   </label>
                                   {veoStartFrame && (
                                     <div className="mt-4 relative">
@@ -870,9 +936,16 @@ export default function Home() {
                               >
                                 <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
                                   <div className="mb-2 text-sm font-medium">엔드 프레임</div>
-                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                    업로드
-                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoEndFrame(u))} />
+                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white disabled:opacity-50">
+                                    {veoEndFrameLoading ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        업로드 중...
+                                      </>
+                                    ) : (
+                                      "업로드"
+                                    )}
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoEndFrame(u), setVeoEndFrameLoading)} disabled={veoEndFrameLoading} />
                                   </label>
                                   {veoEndFrame && (
                                     <div className="mt-4 relative">
@@ -1023,28 +1096,67 @@ export default function Home() {
                 const isLoading = p.loading === true;
 
                 return (
-                  <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-2">
+                  <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-2 group relative">
                     <div className="text-[9px] text-white/50 mb-1">
                       {new Date(p.at).toLocaleString()} · {p.type?.toUpperCase?.() || p.type}
                     </div>
-                    <div className="aspect-square rounded-lg overflow-hidden bg-black/40 flex items-center justify-center">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-black/40 flex items-center justify-center relative">
                       {isLoading ? (
                         <div className="flex flex-col items-center justify-center gap-2">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                           <div className="text-[9px] text-white/50">생성 중...</div>
                         </div>
                       ) : videos.length > 0 ? (
-                        <video src={videos[0]} className="w-full h-full object-cover" controls />
+                        <>
+                          <video
+                            src={videos[0]}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setVideoModal({ url: videos[0], prompt: p.request?.prompt })}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/60 rounded-full p-3">
+                              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </>
                       ) : images.length > 0 ? (
                         <img src={images[0]} className="w-full h-full object-cover" alt="thumb" />
                       ) : (
                         <div className="text-xs text-white/50">미리보기 없음</div>
                       )}
                     </div>
+                    {/* Download button */}
+                    {!isLoading && (videos.length > 0 || images.length > 0) && (
+                      <button
+                        onClick={() => {
+                          const url = videos.length > 0 ? videos[0] : images[0];
+                          downloadMedia(url, `ainspire-${p.type}-${p.at}`);
+                        }}
+                        className="absolute top-2 right-2 bg-black/80 hover:bg-black text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="다운로드"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                    )}
                     {!isLoading && images.length > 1 && (
                       <div className="mt-1 grid grid-cols-4 gap-1">
                         {images.slice(1, 5).map((u: string, idx: number) => (
-                          <img key={idx} src={u} className="h-8 w-full object-cover rounded border border-white/10" />
+                          <div key={idx} className="relative group/img">
+                            <img src={u} className="h-8 w-full object-cover rounded border border-white/10" />
+                            <button
+                              onClick={() => downloadMedia(u, `ainspire-${p.type}-${p.at}-${idx + 1}`)}
+                              className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                              title="다운로드"
+                            >
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </button>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -1059,6 +1171,74 @@ export default function Home() {
         </section>
       </div>
       </div>
+
+      {/* Drag preview that follows mouse cursor */}
+      {dragPreview && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: dragPreview.x,
+            top: dragPreview.y,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <img
+            src={dragPreview.imageUrl}
+            alt="drag preview"
+            className="w-24 h-24 object-cover rounded-lg border-2 border-white/50 shadow-2xl opacity-90"
+          />
+        </div>
+      )}
+
+      {/* Video modal */}
+      {videoModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setVideoModal(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full bg-black/90 rounded-2xl border border-white/20 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setVideoModal(null)}
+              className="absolute top-4 right-4 z-10 bg-black/80 hover:bg-black text-white rounded-full p-2 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Download button */}
+            <button
+              onClick={() => downloadMedia(videoModal.url, `ainspire-video-${Date.now()}`)}
+              className="absolute top-4 right-16 z-10 bg-black/80 hover:bg-black text-white rounded-full p-2 transition-colors"
+              title="다운로드"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+
+            {/* Video player */}
+            <video
+              src={videoModal.url}
+              className="w-full"
+              controls
+              autoPlay
+            />
+
+            {/* Prompt text */}
+            {videoModal.prompt && (
+              <div className="p-4 bg-white/5 border-t border-white/10">
+                <div className="text-xs text-white/50 mb-1">프롬프트</div>
+                <div className="text-sm text-white">{videoModal.prompt}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
