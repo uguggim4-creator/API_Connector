@@ -37,6 +37,23 @@ const initialCards: CardMeta[] = [
   },
 ];
 
+// 요금 정보 타입
+interface PricingInfo {
+  model: string;
+  price: number;
+  unit: string;
+  description: string;
+}
+
+const PRICING: PricingInfo[] = [
+  { model: "sora", price: 0.10, unit: "초", description: "Sora 2" },
+  { model: "sora-pro", price: 0.30, unit: "초", description: "Sora 2 Pro" },
+  { model: "seedream", price: 0.03, unit: "장", description: "Seedream 4.0" },
+  { model: "veo-standard", price: 0.40, unit: "초", description: "Veo 3.1 Standard" },
+  { model: "veo-fast", price: 0.15, unit: "초", description: "Veo 3.1 Fast" },
+  { model: "nanobanana", price: 0.039, unit: "장", description: "Nanobanana" },
+];
+
 export default function Home() {
   // Card order state (first index is centered in slider)
   const [order, setOrder] = useState<CardId[]>(["images", "videos", "projects"]);
@@ -44,6 +61,9 @@ export default function Home() {
     () => Object.fromEntries(initialCards.map((c) => [c.id, c])),
     []
   ) as Record<CardId, CardMeta>;
+
+  // 요금 패널 상태
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   // Parallax removed per request
 
@@ -637,6 +657,79 @@ export default function Home() {
     }
   }, []);
 
+  // 이번달 사용량 및 요금 계산
+  const calculateMonthlyUsage = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    const usage: Record<string, { count: number; cost: number; unit: string }> = {};
+    let totalCost = 0;
+
+    projects.forEach((p) => {
+      const projectDate = new Date(p.at);
+      if (projectDate.getMonth() !== thisMonth || projectDate.getFullYear() !== thisYear) {
+        return; // 이번달이 아니면 스킵
+      }
+
+      if (p.loading) return; // 로딩 중인 항목 제외
+
+      const req = p.request || {};
+      let modelKey = "";
+      let cost = 0;
+      let unit = "";
+      let count = 0;
+
+      // 이미지 모델 처리
+      if (p.type === "image") {
+        const imageCount = parseInt(req.n || "1", 10);
+        count = imageCount;
+
+        if (req.model?.includes("seedream")) {
+          modelKey = "seedream";
+          cost = imageCount * 0.03;
+          unit = "장";
+        } else if (req.model?.includes("nanobanana")) {
+          modelKey = "nanobanana";
+          cost = imageCount * 0.039;
+          unit = "장";
+        }
+      }
+      // 비디오 모델 처리
+      else if (p.type === "video") {
+        const duration = req.duration || 5;
+        count = duration;
+        unit = "초";
+
+        // 모델 판별 (API endpoint 기반)
+        if (req.model?.includes("veo") || p.result?.model?.includes("veo")) {
+          // Veo는 기본적으로 standard로 계산 (fast 구분이 필요하면 추가 로직 필요)
+          modelKey = "veo-standard";
+          cost = duration * 0.40;
+        } else if (req.model?.includes("sora") || p.result?.model?.includes("sora")) {
+          // Sora Pro 구분 (필요 시)
+          modelKey = "sora";
+          cost = duration * 0.10;
+        } else if (req.model?.includes("kling")) {
+          // Kling은 가격 정보가 없어서 0으로 처리
+          modelKey = "kling";
+          cost = 0;
+        }
+      }
+
+      if (modelKey && cost > 0) {
+        if (!usage[modelKey]) {
+          usage[modelKey] = { count: 0, cost: 0, unit };
+        }
+        usage[modelKey].count += count;
+        usage[modelKey].cost += cost;
+        totalCost += cost;
+      }
+    });
+
+    return { usage, totalCost };
+  }, [projects]);
+
   // Helpers to extract media from results for gallery
   const IMG_EXT = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
   const VID_EXT = [".mp4", ".webm", ".mov", ".m3u8"];
@@ -685,6 +778,111 @@ export default function Home() {
           opacity: 0.95,
         }}
       />
+
+      {/* 요금 패널 토글 버튼 */}
+      <button
+        onClick={() => setIsPricingOpen(!isPricingOpen)}
+        className="fixed top-24 right-4 z-50 px-4 py-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-sm text-white transition-all shadow-lg"
+        title="요금 정보"
+      >
+        💰 요금
+      </button>
+
+      {/* 요금 패널 */}
+      <div
+        className={`fixed top-0 right-0 h-full w-96 bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl transform transition-transform duration-300 z-40 overflow-y-auto ${
+          isPricingOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="p-6">
+          {/* 헤더 */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">💰 요금 정보</h2>
+            <button
+              onClick={() => setIsPricingOpen(false)}
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* 이번달 총 사용 요금 */}
+          <div className="mb-8 p-6 rounded-2xl border-2 border-yellow-500/30 bg-yellow-500/10">
+            <div className="text-sm text-yellow-200/80 mb-2">이번달 총 사용액</div>
+            <div className="text-4xl font-bold text-yellow-300">
+              ${calculateMonthlyUsage.totalCost.toFixed(3)}
+            </div>
+            <div className="text-xs text-yellow-200/60 mt-2">
+              {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
+            </div>
+          </div>
+
+          {/* 모델별 사용량 */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-white/90">모델별 사용량</h3>
+            {Object.keys(calculateMonthlyUsage.usage).length === 0 ? (
+              <div className="text-sm text-white/40 text-center py-8">
+                이번달 사용 내역이 없습니다
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(calculateMonthlyUsage.usage).map(([modelKey, data]) => {
+                  const pricingInfo = PRICING.find(p => p.model === modelKey);
+                  return (
+                    <div
+                      key={modelKey}
+                      className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-white">
+                          {pricingInfo?.description || modelKey}
+                        </span>
+                        <span className="text-lg font-bold text-green-400">
+                          ${data.cost.toFixed(3)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-white/60">
+                        {data.count} {data.unit} × ${pricingInfo?.price || 0}/{data.unit}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 요금표 */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-white/90">요금표</h3>
+            <div className="space-y-2">
+              {PRICING.map((pricing) => (
+                <div
+                  key={pricing.model}
+                  className="p-3 rounded-lg border border-white/10 bg-white/5 text-sm"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-white/90">{pricing.description}</span>
+                    <span className="text-blue-300 font-mono">
+                      ${pricing.price.toFixed(3)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-white/50">per {pricing.unit}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 참고 사항 */}
+          <div className="mt-8 p-4 rounded-xl border border-white/10 bg-white/5 text-xs text-white/60">
+            <div className="font-medium text-white/80 mb-2">💡 참고사항</div>
+            <ul className="space-y-1 list-disc list-inside">
+              <li>요금은 localStorage 기록 기반으로 계산됩니다</li>
+              <li>브라우저 캐시 삭제 시 기록이 초기화됩니다</li>
+              <li>실제 청구 금액은 API 제공업체에서 확인하세요</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       {/* Content wrapper */}
       <div className="relative z-10">
