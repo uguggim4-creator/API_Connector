@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type TabId = "nanobanana" | "seedream" | "veo-3.1" | "kling" | "sora-2";
 
@@ -143,7 +144,9 @@ export default function SettingsPage() {
       <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold">API 관리</h1>
-          <div className="text-sm text-white/60">ainspire_내돈내산</div>
+          <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors cursor-pointer">
+            ainspire_내돈내산
+          </Link>
         </div>
       </header>
 
