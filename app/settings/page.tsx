@@ -1,306 +1,301 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from "react";
 
-interface ApiKey {
+type TabId = "nanobanana" | "seedream" | "veo-3.1" | "kling" | "sora-2";
+
+type PlatformId = "nanobanana" | "seedream" | "veo" | "kling" | "sora" | "openai" | "gemini";
+
+interface KeyItem {
   id: string;
-  platform: string;
+  platform: PlatformId;
   keyName?: string;
   isActive: boolean;
   createdAt: string;
-  keyPreview: string;
+  lastUsedAt?: string;
+  keyPreview?: string;
+}
+
+const tabLabels: Record<TabId, string> = {
+  nanobanana: "Nanobanana",
+  seedream: "Seedream",
+  "veo-3.1": "Veo 3.1",
+  kling: "Kling",
+  "sora-2": "Sora 2",
+};
+
+function mapTabToPlatform(tab: TabId): PlatformId {
+  switch (tab) {
+    case "veo-3.1":
+      return "veo";
+    case "sora-2":
+      return "sora";
+    default:
+      return tab as PlatformId;
+  }
 }
 
 export default function SettingsPage() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [autoImporting, setAutoImporting] = useState(false);
-  const [formData, setFormData] = useState({
-    platform: 'openai',
-    apiKey: '',
-    keyName: '',
-  });
+  const [active, setActive] = useState<TabId>("nanobanana");
+  const [keys, setKeys] = useState<KeyItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchKeys();
-  }, []);
+  // form state
+  const [apiKey, setApiKey] = useState("");
+  const [keyName, setKeyName] = useState("");
+  const [veoProjectId, setVeoProjectId] = useState("");
+  const [veoRegion, setVeoRegion] = useState("");
 
-  const fetchKeys = async () => {
+  // 전체 API 키 목록 (우측 패널에서 탭과 무관하게 모두 표시)
+  const allKeysSorted = useMemo(() => {
+    return [...keys].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [keys]);
+
+  async function refreshKeys() {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('/api/keys');
-      const data = await response.json();
-      if (data.success) {
-        setKeys(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch keys:', error);
+      const res = await fetch("/api/keys", { cache: "no-store" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to fetch keys");
+      setKeys(json.data as KeyItem[]);
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleAddKey = async (e: React.FormEvent) => {
+  useEffect(() => {
+    refreshKeys();
+  }, []);
+
+  function resetForm() {
+    setApiKey("");
+    setKeyName("");
+    setVeoProjectId("");
+    setVeoRegion("");
+  }
+
+  async function handleAddKey(e: React.FormEvent) {
     e.preventDefault();
-
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('/api/keys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      const platform = mapTabToPlatform(active);
+      const body: any = { platform, apiKey, keyName };
+      if (platform === "veo") {
+        body.projectId = veoProjectId;
+        body.region = veoRegion;
+      }
+      const res = await fetch("/api/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setFormData({ platform: 'openai', apiKey: '', keyName: '' });
-        setShowAddForm(false);
-        fetchKeys();
-      } else {
-        alert('Failed to add API key: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Failed to add key:', error);
-      alert('Failed to add API key');
-    }
-  };
-
-  const handleDeleteKey = async (id: string) => {
-    if (!confirm('정말로 이 API 키를 삭제하시겠습니까?')) return;
-
-    try {
-      const response = await fetch(`/api/keys?id=${id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        fetchKeys();
-      } else {
-        alert('Failed to delete API key: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Failed to delete key:', error);
-      alert('Failed to delete API key');
-    }
-  };
-
-  const handleToggleActive = async (id: string, isActive: boolean) => {
-    try {
-      const response = await fetch('/api/keys', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, isActive: !isActive }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        fetchKeys();
-      } else {
-        alert('Failed to update API key: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Failed to update key:', error);
-      alert('Failed to update API key');
-    }
-  };
-
-  const handleAutoImport = async () => {
-    if (!confirm('환경 변수에서 API 키를 자동으로 가져오시겠습니까?')) return;
-
-    setAutoImporting(true);
-    try {
-      const response = await fetch('/api/auto-import');
-      const data = await response.json();
-
-      if (data.success) {
-        const successCount = data.data.filter((r: any) => r.success).length;
-        alert(`${successCount}개의 API 키가 성공적으로 연결되었습니다.`);
-        fetchKeys();
-      } else {
-        alert('자동 연결 실패: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Failed to auto-import:', error);
-      alert('자동 연결 중 오류가 발생했습니다.');
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to add key");
+      resetForm();
+      await refreshKeys();
+    } catch (e: any) {
+      setError(e.message);
     } finally {
-      setAutoImporting(false);
+      setLoading(false);
     }
-  };
+  }
 
-  const platformNames: Record<string, string> = {
-    openai: 'OpenAI',
-    gemini: 'Google Gemini',
-    veo: 'Google Veo 3.1',
-    kling: 'Kling AI',
-    seedream: 'Seedream 4.0',
-  };
+  async function toggleActive(id: string, isActive: boolean) {
+    try {
+      const res = await fetch("/api/keys", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, isActive }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to update key");
+      await refreshKeys();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function deleteKey(id: string) {
+    try {
+      const res = await fetch(`/api/keys?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Failed to delete key");
+      await refreshKeys();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  const isVeo = mapTabToPlatform(active) === "veo";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white">API 키 관리</h1>
-              <p className="text-gray-400 mt-2">각 플랫폼의 API 키를 안전하게 관리하세요</p>
-            </div>
-            <Link
-              href="/"
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-            >
-              홈으로
-            </Link>
-          </div>
+    <div className="min-h-screen bg-black text-white relative">
+      {/* Background image */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/bg-gradient.svg')",
+          opacity: 0.95,
+        }}
+      />
+      
+      {/* Content wrapper */}
+      <div className="relative z-10">
+      <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold">API 관리</h1>
+          <div className="text-sm text-white/60">ainspire_내돈내산</div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex gap-3">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-semibold"
-          >
-            + 새 API 키 추가
-          </button>
-          <button
-            onClick={handleAutoImport}
-            disabled={autoImporting}
-            className="px-6 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-semibold"
-          >
-            {autoImporting ? '연결 중...' : '⚡ 환경 변수에서 자동 연결'}
-          </button>
-          <Link
-            href="/setup"
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors font-semibold"
-          >
-            🧙 설정 마법사
-          </Link>
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {(Object.keys(tabLabels) as TabId[]).map((tab) => {
+            const activeTab = active === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActive(tab)}
+                className={`px-4 py-2 rounded-full border ${
+                  activeTab
+                    ? "bg-white/20 border-white/30"
+                    : "bg-white/10 border-white/10 hover:bg-white/20"
+                } transition-colors`}
+              >
+                {tabLabels[tab]}
+              </button>
+            );
+          })}
         </div>
 
-        {showAddForm && (
-          <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">API 키 추가</h2>
+        {/* Panel */}
+        <section className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Add key form */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+            <h2 className="text-lg font-medium mb-4">{tabLabels[active]} 키 추가</h2>
             <form onSubmit={handleAddKey} className="space-y-4">
               <div>
-                <label className="block text-gray-300 mb-2">플랫폼</label>
-                <select
-                  value={formData.platform}
-                  onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="openai">OpenAI</option>
-                  <option value="gemini">Google Gemini</option>
-                  <option value="veo">Google Veo 3.1</option>
-                  <option value="kling">Kling AI</option>
-                  <option value="seedream">Seedream 4.0</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-300 mb-2">API 키</label>
+                <label className="block text-sm mb-1 text-white/80">표시 이름(선택)</label>
                 <input
-                  type="password"
-                  value={formData.apiKey}
-                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  value={keyName}
+                  onChange={(e) => setKeyName(e.target.value)}
+                  placeholder="예: 개인용, 팀용"
+                  className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-white/80">API Key</label>
+                <input
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
                   placeholder="sk-..."
                   required
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
+                  className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
 
-              <div>
-                <label className="block text-gray-300 mb-2">키 이름 (선택사항)</label>
-                <input
-                  type="text"
-                  value={formData.keyName}
-                  onChange={(e) => setFormData({ ...formData, keyName: e.target.value })}
-                  placeholder="예: Production Key"
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-                >
-                  추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  취소
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-center text-gray-400 py-12">로딩 중...</div>
-        ) : keys.length === 0 ? (
-          <div className="bg-gray-800/50 rounded-lg p-12 border border-gray-700 text-center">
-            <p className="text-gray-400 text-lg">등록된 API 키가 없습니다.</p>
-            <p className="text-gray-500 mt-2">위의 버튼을 클릭하여 첫 번째 API 키를 추가하세요.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {keys.map((key) => (
-              <div
-                key={key.id}
-                className="bg-gray-800/50 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-white">
-                        {platformNames[key.platform] || key.platform}
-                      </h3>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          key.isActive
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-gray-500/20 text-gray-400'
-                        }`}
-                      >
-                        {key.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                    {key.keyName && (
-                      <p className="text-gray-400 text-sm mb-1">{key.keyName}</p>
-                    )}
-                    <p className="text-gray-500 text-sm font-mono">{key.keyPreview}</p>
-                    <p className="text-gray-600 text-xs mt-2">
-                      생성: {new Date(key.createdAt).toLocaleString('ko-KR')}
-                    </p>
+              {isVeo && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1 text-white/80">Project ID</label>
+                    <input
+                      value={veoProjectId}
+                      onChange={(e) => setVeoProjectId(e.target.value)}
+                      placeholder="veo-project-id"
+                      required
+                      className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                    />
                   </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleToggleActive(key.id, key.isActive)}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-                    >
-                      {key.isActive ? '비활성화' : '활성화'}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteKey(key.id)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm"
-                    >
-                      삭제
-                    </button>
+                  <div>
+                    <label className="block text-sm mb-1 text-white/80">Region</label>
+                    <input
+                      value={veoRegion}
+                      onChange={(e) => setVeoRegion(e.target.value)}
+                      placeholder="us-east-1"
+                      required
+                      className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                    />
                   </div>
                 </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/20 disabled:opacity-60"
+                >
+                  {loading ? "저장 중..." : "키 저장"}
+                </button>
               </div>
-            ))}
+              {error && <p className="text-red-400 text-sm">{error}</p>}
+            </form>
+            <p className="mt-4 text-xs text-white/50">
+              참고: Veo는 Project ID와 Region이 필요합니다. 다른 탭은 API Key만 입력하면 됩니다.
+            </p>
           </div>
-        )}
+
+          {/* Keys list */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+            <h2 className="text-lg font-medium mb-4">등록된 키</h2>
+            {loading && keys.length === 0 ? (
+              <div className="text-white/60">불러오는 중…</div>
+            ) : allKeysSorted.length === 0 ? (
+              <div className="text-white/60">등록된 키가 없습니다.</div>
+            ) : (
+              <ul className="space-y-3">
+                {allKeysSorted.map((k) => (
+                  <li
+                    key={k.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{k.keyName || "이름 없음"}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-white/70">
+                          {k.platform.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 border border-white/10 text-white/70">
+                          {k.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-white/60 truncate">
+                        {k.keyPreview || "••••••••"}
+                      </div>
+                      <div className="text-[10px] text-white/40">{new Date(k.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => toggleActive(k.id, !k.isActive)}
+                        className="px-3 py-1.5 rounded-lg text-xs border border-white/10 hover:bg-white/10"
+                      >
+                        {k.isActive ? "비활성화" : "활성화"}
+                      </button>
+                      <button
+                        onClick={() => deleteKey(k.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs border border-red-500/40 text-red-300 hover:bg-red-500/10"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </main>
+      </div>
     </div>
   );
 }
