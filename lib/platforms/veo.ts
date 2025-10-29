@@ -105,10 +105,43 @@ export class VeoClient {
       };
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      console.error('Veo API Error:', error.message);
+      console.error('Veo API Error:', error);
+
+      // Check for specific error types and provide helpful messages
+      let errorMessage = error.message || 'Unknown error';
+      let activationUrl = null;
+
+      // Handle 403 PERMISSION_DENIED errors
+      if (error.message && error.message.includes('PERMISSION_DENIED')) {
+        errorMessage = 'API Access Denied: Please enable the Generative Language API for your project.\n\n';
+
+        // Extract project ID from error message if available
+        const projectMatch = error.message.match(/project (\d+)/);
+        if (projectMatch) {
+          const projectId = projectMatch[1];
+          activationUrl = `https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=${projectId}`;
+          errorMessage += `1. Visit: ${activationUrl}\n`;
+          errorMessage += `2. Click "Enable API"\n`;
+          errorMessage += `3. Wait a few minutes for the changes to propagate\n`;
+          errorMessage += `4. Try again\n\n`;
+          errorMessage += `Alternatively, create a new API key at https://aistudio.google.com/apikey`;
+        } else {
+          errorMessage += 'Please enable the Generative Language API in your Google Cloud Console.\n';
+          errorMessage += 'Visit: https://aistudio.google.com/apikey to create a new API key with the correct permissions.';
+        }
+      } else if (error.message && error.message.includes('SERVICE_DISABLED')) {
+        errorMessage = 'Service Disabled: The Generative Language API is disabled for your project.\n\n';
+        errorMessage += 'Please enable it at: https://aistudio.google.com/apikey\n';
+        errorMessage += 'Or use an API key from a project with the API enabled.';
+      } else if (error.message && (error.message.includes('API key') || error.message.includes('invalid'))) {
+        errorMessage = 'Invalid API Key: Please check your Veo API key.\n\n';
+        errorMessage += 'Get a valid API key at: https://aistudio.google.com/apikey';
+      }
+
       return {
         success: false,
-        error: error.message || 'Unknown error',
+        error: errorMessage,
+        activationUrl,
         duration,
       };
     }
