@@ -360,20 +360,19 @@ function PlaygroundContent() {
   const currentTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-100 to-slate-200">
+    <div className="min-h-screen bg-black">
       {/* Header */}
       <header className="relative z-10">
         <div className="container mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">AI Platform Hub</h1>
-              <p className="text-gray-600 text-lg">Transform your ideas into reality with AI</p>
+              <h1 className="text-4xl font-bold text-white mb-2">AI Studio</h1>
             </div>
             <Link
               href="/landing"
-              className="px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 text-gray-800 rounded-xl hover:bg-white/30 transition-all duration-300 font-medium"
+              className="px-6 py-3 bg-white text-black rounded-xl hover:bg-gray-100 transition-all duration-300 font-medium"
             >
-              홈으로
+              Home
             </Link>
           </div>
         </div>
@@ -381,53 +380,36 @@ function PlaygroundContent() {
 
       <main className="container mx-auto px-6 pb-12">
         <div className="space-y-8">
-          {/* 1. 모델 선택 섹션 */}
+          {/* 1. 모델 선택 섹션 - 드롭다운으로 최소화 */}
           <section className="relative">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-xl">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">모델 선택</h2>
-                <p className="text-gray-600">AI 플랫폼을 선택하여 시작하세요</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { id: 'openai', name: 'OpenAI', icon: '🤖', description: 'GPT-4, DALL-E' },
-                  { id: 'gemini', name: 'Google Gemini', icon: '✨', description: 'Gemini Pro' },
-                  { id: 'seedream', name: 'Seedream 4.0', icon: '🖼️', description: '4K 이미지 생성' },
-                  { id: 'kling', name: 'Kling AI', icon: '🎥', description: '비디오 생성' },
-                  { id: 'veo', name: 'Google Veo 3.1', icon: '🎬', description: 'AI 비디오' },
-                ].map((platform) => (
-                  <button
-                    key={platform.id}
-                    onClick={() => setSelectedPlatform(platform.id)}
-                    className={`p-6 rounded-xl transition-all duration-300 ${
-                      selectedPlatform === platform.id
-                        ? 'bg-white/30 backdrop-blur-md border-2 border-blue-400 shadow-lg scale-105'
-                        : 'bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/25 hover:scale-102'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-4xl mb-3">{platform.icon}</div>
-                      <h3 className="font-semibold text-gray-800 mb-1">{platform.name}</h3>
-                      <p className="text-sm text-gray-600">{platform.description}</p>
-                    </div>
-                  </button>
-                ))}
+            <div className="bg-white rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-black">Model</h2>
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black font-medium"
+                >
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="seedream">Seedream 4.0</option>
+                  <option value="kling">Kling AI</option>
+                  <option value="veo">Google Veo 3.1</option>
+                </select>
               </div>
             </div>
           </section>
 
           {/* 2. 참조 이미지 섹션 */}
           <section className="relative">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-xl">
+            <div className="bg-white rounded-2xl p-8 shadow-xl">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">참조 이미지</h2>
-                <p className="text-gray-600">원하는 스타일의 이미지를 업로드하세요</p>
+                <h2 className="text-2xl font-semibold text-black mb-2">Reference Images</h2>
               </div>
 
               {/* 이미지 업로드 영역 */}
               <div className="mb-6">
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-black transition-colors">
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png"
@@ -440,24 +422,24 @@ function PlaygroundContent() {
                     htmlFor="file-upload"
                     className="cursor-pointer block"
                   >
-                    <div className="text-6xl mb-4">📁</div>
-                    <p className="text-gray-600 mb-2">클릭하여 이미지 업로드</p>
-                    <p className="text-sm text-gray-500">JPEG, PNG (최대 10MB)</p>
+                    <div className="text-6xl mb-4 text-gray-400">+</div>
+                    <p className="text-gray-600 mb-2">Click to upload images</p>
+                    <p className="text-sm text-gray-500">JPEG, PNG (max 10MB)</p>
                   </label>
                 </div>
               </div>
 
-              {/* 업로드된 이미지 그리드 */}
+              {/* 업로드된 이미지 그리드 - 꽉 차도록 수정 */}
               {seedreamReferenceImages.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">업로드된 이미지</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <h3 className="text-lg font-medium text-black mb-4">Uploaded Images</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {seedreamReferenceImages.map((url, index) => (
-                      <div key={index} className="relative group">
+                      <div key={index} className="relative group aspect-square">
                         <img
                           src={url}
                           alt={`참조 이미지 ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-white/30"
+                          className="w-full h-full object-cover rounded-lg"
                         />
                         <button
                           onClick={() => removeReferenceImage(index)}
@@ -474,12 +456,12 @@ function PlaygroundContent() {
               {/* URL 입력 섹션 */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-800">이미지 URL 추가</h3>
+                  <h3 className="text-lg font-medium text-black">Add Image URL</h3>
                   <button
                     onClick={handleAddImageUrl}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                   >
-                    + URL 추가
+                    + Add URL
                   </button>
                 </div>
                 
@@ -490,13 +472,13 @@ function PlaygroundContent() {
                       value={url}
                       onChange={(e) => handleImageUrlChange(index, e.target.value)}
                       placeholder="https://example.com/image.jpg"
-                      className="flex-1 px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                     />
                     <button
                       onClick={() => removeReferenceImage(index)}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                     >
-                      삭제
+                      Remove
                     </button>
                   </div>
                 ))}
@@ -504,28 +486,27 @@ function PlaygroundContent() {
             </div>
           </section>
 
-          {/* 3. 설정 탭 섹션 */}
+          {/* 3. 작업 탭 섹션 - 하나의 배너로 통합 */}
           <section className="relative">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-xl">
+            <div className="bg-white rounded-2xl p-8 shadow-xl">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">설정 탭</h2>
-                <p className="text-gray-600">AI 모델의 세부 설정을 조정하세요</p>
+                <h2 className="text-2xl font-semibold text-black mb-2">Create</h2>
               </div>
 
               {/* 탭 선택 */}
               <div className="flex justify-center mb-8">
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-1">
+                <div className="bg-gray-100 rounded-xl p-1">
                   {availableTabs.map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab as 'image' | 'video')}
-                      className={`px-6 py-3 rounded-lg transition-all duration-300 ${
+                      className={`px-8 py-4 rounded-lg transition-all duration-300 font-medium ${
                         currentTab === tab
-                          ? 'bg-white/30 text-gray-800 font-medium'
-                          : 'text-gray-600 hover:text-gray-800'
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:text-black'
                       }`}
                     >
-                      {tab === 'image' ? '이미지 생성' : '비디오 생성'}
+                      {tab === 'image' ? 'IMAGE' : 'VIDEO'}
                     </button>
                   ))}
                 </div>
@@ -536,22 +517,22 @@ function PlaygroundContent() {
                 {selectedPlatform === 'openai' && (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">액션</label>
+                      <label className="block text-black font-medium mb-2">Action</label>
                       <select
                         value={openaiAction}
                         onChange={(e) => setOpenaiAction(e.target.value as 'chat' | 'image')}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                       >
-                        <option value="chat">텍스트 생성 (Chat)</option>
-                        <option value="image">이미지 생성 (DALL-E)</option>
+                        <option value="chat">Text Generation</option>
+                        <option value="image">Image Generation</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">모델</label>
+                      <label className="block text-black font-medium mb-2">Model</label>
                       <select
                         value={openaiModel}
                         onChange={(e) => setOpenaiModel(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                       >
                         <option value="gpt-4">GPT-4</option>
                         <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
@@ -560,13 +541,13 @@ function PlaygroundContent() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">프롬프트</label>
+                      <label className="block text-black font-medium mb-2">Prompt</label>
                       <textarea
                         value={openaiPrompt}
                         onChange={(e) => setOpenaiPrompt(e.target.value)}
-                        placeholder="프롬프트를 입력하세요..."
+                        placeholder="Enter your prompt..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                       />
                     </div>
                   </div>
@@ -575,24 +556,24 @@ function PlaygroundContent() {
                 {selectedPlatform === 'gemini' && (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">모델</label>
+                      <label className="block text-black font-medium mb-2">Model</label>
                       <select
                         value={geminiModel}
                         onChange={(e) => setGeminiModel(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                       >
                         <option value="gemini-pro">Gemini Pro</option>
                         <option value="gemini-pro-vision">Gemini Pro Vision</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">프롬프트</label>
+                      <label className="block text-black font-medium mb-2">Prompt</label>
                       <textarea
                         value={geminiPrompt}
                         onChange={(e) => setGeminiPrompt(e.target.value)}
-                        placeholder="프롬프트를 입력하세요..."
+                        placeholder="Enter your prompt..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                       />
                     </div>
                   </div>
@@ -601,34 +582,34 @@ function PlaygroundContent() {
                 {selectedPlatform === 'seedream' && (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">프롬프트</label>
+                      <label className="block text-black font-medium mb-2">Prompt</label>
                       <textarea
                         value={seedreamPrompt}
                         onChange={(e) => setSeedreamPrompt(e.target.value)}
-                        placeholder="이미지 설명을 입력하세요..."
+                        placeholder="Describe the image you want to create..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-gray-700 font-medium mb-2">모델</label>
+                        <label className="block text-black font-medium mb-2">Model</label>
                         <select
                           value={seedreamModel}
                           onChange={(e) => setSeedreamModel(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                         >
-                          <option value="seedream-4-0-250828">Seedream 4.0 (250828)</option>
-                          <option value="ByteDance-Seed/Seedream-4.0">Seedream 4.0 (Alt)</option>
+                          <option value="seedream-4-0-250828">Seedream 4.0</option>
+                          <option value="ByteDance-Seed/Seedream-4.0">Seedream 4.0 Alt</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-700 font-medium mb-2">해상도</label>
+                        <label className="block text-black font-medium mb-2">Resolution</label>
                         <select
                           value={seedreamAspectRatio}
                           onChange={(e) => setSeedreamAspectRatio(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                         >
                           <option value="1:1">1:1 (2048x2048)</option>
                           <option value="4:3">4:3 (2304x1728)</option>
@@ -644,25 +625,25 @@ function PlaygroundContent() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-gray-700 font-medium mb-2">응답 형식</label>
+                        <label className="block text-black font-medium mb-2">Response Format</label>
                         <select
                           value={seedreamResponseFormat}
                           onChange={(e) => setSeedreamResponseFormat(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                         >
                           <option value="url">URL</option>
                           <option value="base64">Base64</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-700 font-medium mb-2">순차 생성</label>
+                        <label className="block text-black font-medium mb-2">Sequential Generation</label>
                         <select
                           value={seedreamSequentialGeneration}
                           onChange={(e) => setSeedreamSequentialGeneration(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                         >
-                          <option value="disabled">비활성화 (동시 생성)</option>
-                          <option value="enabled">활성화 (순차 생성)</option>
+                          <option value="disabled">Disabled</option>
+                          <option value="enabled">Enabled</option>
                         </select>
                       </div>
                     </div>
@@ -673,10 +654,10 @@ function PlaygroundContent() {
                         id="seedream-watermark"
                         checked={seedreamWatermark}
                         onChange={(e) => setSeedreamWatermark(e.target.checked)}
-                        className="w-5 h-5 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
                       />
-                      <label htmlFor="seedream-watermark" className="ml-3 text-gray-700 font-medium">
-                        워터마크 표시
+                      <label htmlFor="seedream-watermark" className="ml-3 text-black font-medium">
+                        Show Watermark
                       </label>
                     </div>
                   </div>
@@ -685,24 +666,24 @@ function PlaygroundContent() {
                 {selectedPlatform === 'kling' && (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">프롬프트</label>
+                      <label className="block text-black font-medium mb-2">Prompt</label>
                       <textarea
                         value={klingPrompt}
                         onChange={(e) => setKlingPrompt(e.target.value)}
-                        placeholder="비디오 설명을 입력하세요..."
+                        placeholder="Describe the video you want to create..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">길이 (초)</label>
+                      <label className="block text-black font-medium mb-2">Duration (seconds)</label>
                       <select
                         value={klingDuration}
                         onChange={(e) => setKlingDuration(Number(e.target.value))}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                       >
-                        <option value={5}>5초</option>
-                        <option value={10}>10초</option>
+                        <option value={5}>5 seconds</option>
+                        <option value={10}>10 seconds</option>
                       </select>
                     </div>
                   </div>
@@ -711,24 +692,24 @@ function PlaygroundContent() {
                 {selectedPlatform === 'veo' && (
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">프롬프트</label>
+                      <label className="block text-black font-medium mb-2">Prompt</label>
                       <textarea
                         value={veoPrompt}
                         onChange={(e) => setVeoPrompt(e.target.value)}
-                        placeholder="비디오 설명을 입력하세요..."
+                        placeholder="Describe the video you want to create..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800 placeholder-gray-500"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black placeholder-gray-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">길이 (초)</label>
+                      <label className="block text-black font-medium mb-2">Duration (seconds)</label>
                       <input
                         type="number"
                         value={veoDuration}
                         onChange={(e) => setVeoDuration(Number(e.target.value))}
                         min={5}
                         max={60}
-                        className="w-full px-4 py-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-gray-800"
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black"
                       />
                     </div>
                   </div>
@@ -738,9 +719,9 @@ function PlaygroundContent() {
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl"
+                    className="px-8 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
-                    {loading ? '처리 중...' : '생성 시작'}
+                    {loading ? 'Creating...' : 'CREATE'}
                   </button>
                 </div>
               </div>
@@ -750,16 +731,15 @@ function PlaygroundContent() {
           {/* 4. 결과물 섹션 */}
           {result && (
             <section className="relative">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-xl">
+              <div className="bg-white rounded-2xl p-8 shadow-xl">
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-2">결과 이미지</h2>
-                  <p className="text-gray-600">AI가 생성한 결과물입니다</p>
+                  <h2 className="text-2xl font-semibold text-black mb-2">Result</h2>
                 </div>
 
-                <div className={`p-6 rounded-xl ${result.success ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
+                <div className={`p-6 rounded-xl ${result.success ? 'bg-green-50' : 'bg-red-50'}`}>
                   <div className="flex items-center justify-center gap-3 mb-6">
                     <span className={`text-lg font-semibold ${result.success ? 'text-green-600' : 'text-red-600'}`}>
-                      {result.success ? '✅ 생성 완료' : '❌ 생성 실패'}
+                      {result.success ? '✓ Created Successfully' : '✗ Creation Failed'}
                     </span>
                     {result.duration && (
                       <span className="text-gray-500 text-sm">
@@ -769,31 +749,31 @@ function PlaygroundContent() {
                   </div>
 
                   {!result.success && result.error && (
-                    <div className="mb-6 p-4 bg-red-100/50 border border-red-200 rounded-lg">
-                      <p className="text-red-700 font-medium mb-1">오류 상세:</p>
+                    <div className="mb-6 p-4 bg-red-100 border border-red-200 rounded-lg">
+                      <p className="text-red-700 font-medium mb-1">Error Details:</p>
                       <p className="text-red-600 text-sm">{result.error}</p>
                     </div>
                   )}
 
                   {selectedPlatform === 'seedream' && result.success && result.data?.data && (
                     <div className="mb-6">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">생성된 이미지</h3>
+                      <h3 className="text-xl font-semibold text-black mb-4 text-center">Generated Images</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {result.data.data.map((image: any, index: number) => (
-                          <div key={index} className="bg-white/20 backdrop-blur-sm rounded-xl overflow-hidden border border-white/30">
+                          <div key={index} className="bg-gray-100 rounded-xl overflow-hidden">
                             <img
                               src={image.url || (image.b64_json ? `data:image/png;base64,${image.b64_json}` : '')}
-                              alt={`생성된 이미지 ${index + 1}`}
+                              alt={`Generated image ${index + 1}`}
                               className="w-full h-auto"
                             />
                             <div className="p-4 flex justify-between items-center">
-                              <span className="text-gray-600 font-medium">이미지 {index + 1}</span>
+                              <span className="text-gray-600 font-medium">Image {index + 1}</span>
                               <a
                                 href={image.url || `data:image/png;base64,${image.b64_json}`}
                                 download={`seedream-${Date.now()}-${index + 1}.png`}
-                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
+                                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
                               >
-                                다운로드
+                                Download
                               </a>
                             </div>
                           </div>
@@ -803,10 +783,10 @@ function PlaygroundContent() {
                   )}
 
                   <details className="mt-6">
-                    <summary className="cursor-pointer text-gray-600 text-sm hover:text-gray-800 mb-3 font-medium text-center">
-                      전체 응답 보기 (JSON)
+                    <summary className="cursor-pointer text-gray-600 text-sm hover:text-black mb-3 font-medium text-center">
+                      View Full Response (JSON)
                     </summary>
-                    <pre className="text-gray-700 text-sm overflow-x-auto bg-white/20 backdrop-blur-sm p-4 rounded-lg border border-white/30">
+                    <pre className="text-gray-700 text-sm overflow-x-auto bg-gray-100 p-4 rounded-lg border border-gray-300">
                       {JSON.stringify(result, null, 2)}
                     </pre>
                   </details>
@@ -823,8 +803,8 @@ function PlaygroundContent() {
 export default function PlaygroundPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-100 to-slate-200 flex items-center justify-center">
-        <div className="text-gray-800 text-xl">로딩 중...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     }>
       <PlaygroundContent />
