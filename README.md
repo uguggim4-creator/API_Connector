@@ -24,7 +24,7 @@
 - **언어**: TypeScript
 - **스타일링**: Tailwind CSS
 - **데이터베이스**: JSON 기반 파일 저장소
-- **Storage**: Supabase Storage (이미지 업로드용)
+- **스토리지**: Supabase Storage (이미지 업로드)
 - **AI SDK**:
   - OpenAI SDK
   - Google Generative AI SDK
@@ -51,6 +51,9 @@ ENCRYPTION_KEY="your-secret-encryption-key-change-this-in-production"
 # Supabase 설정 (Seedream 이미지 업로드용)
 NEXT_PUBLIC_SUPABASE_URL="your-supabase-project-url"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_BUCKET_NAME="seedream-images"
 
 # API 키 (선택사항 - 자동 연결 사용 시)
 OPENAI_API_KEY="sk-..."
@@ -175,6 +178,75 @@ Google Gemini API를 통해 접근 (동일한 API 키 사용)
 ### Seedream 4.0
 - BytePlus: [https://console.byteplus.com/](https://console.byteplus.com/)
 - 서드파티: Kie.ai, CometAPI 등
+
+## Supabase Storage 설정 (Seedream 이미지 업로드)
+
+Seedream 모델에서 이미지를 업로드할 때 Supabase Storage를 사용합니다. 다음 단계를 따라 설정하세요:
+
+### 1. Supabase 프로젝트 생성
+
+1. [https://supabase.com](https://supabase.com)에서 계정 생성 및 로그인
+2. "New Project" 클릭하여 새 프로젝트 생성
+3. 프로젝트 이름, 데이터베이스 비밀번호, 리전 선택
+
+### 2. Storage Bucket 생성
+
+1. Supabase 대시보드에서 **Storage** 메뉴로 이동
+2. "Create a new bucket" 클릭
+3. Bucket 설정:
+   - **Name**: `seedream-images` (또는 원하는 이름)
+   - **Public bucket**: ✅ 체크 (공개 URL 사용을 위해)
+4. "Create bucket" 클릭
+
+### 3. Bucket 정책 설정 (공개 업로드 허용)
+
+1. 생성한 `seedream-images` 버킷 클릭
+2. 상단의 **Policies** 탭으로 이동
+3. "New Policy" 클릭
+4. 다음 정책 추가:
+
+**업로드 허용 정책:**
+```sql
+CREATE POLICY "Public upload"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'seedream-images');
+```
+
+**읽기 허용 정책 (이미 public bucket이면 자동 설정):**
+```sql
+CREATE POLICY "Public read"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'seedream-images');
+```
+
+### 4. 환경 변수 설정
+
+1. Supabase 대시보드에서 **Settings** > **API** 이동
+2. 다음 정보를 복사:
+   - **Project URL**: `https://xxxxx.supabase.co`
+   - **anon/public key**: `eyJhbG...`
+
+3. `.env` 파일에 추가:
+```env
+SUPABASE_URL="https://xxxxx.supabase.co"
+SUPABASE_ANON_KEY="eyJhbG..."
+SUPABASE_BUCKET_NAME="seedream-images"
+```
+
+### 5. 테스트
+
+1. 개발 서버 재시작: `npm run dev`
+2. [http://localhost:3000/playground?model=seedream](http://localhost:3000/playground?model=seedream) 접속
+3. "📁 파일 업로드" 버튼으로 이미지 업로드 테스트
+4. 업로드 성공 시 Supabase 공개 URL이 생성됩니다
+
+### 주의사항
+
+- Supabase 무료 플랜: 1GB 스토리지, 2GB 대역폭/월
+- 프로덕션 환경에서는 적절한 보안 정책 설정 권장
+- 민감한 정보가 포함된 이미지는 public bucket 사용 지양
 
 ## 라이선스
 
