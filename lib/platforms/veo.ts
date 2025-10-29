@@ -30,12 +30,22 @@ interface GoogleGenAI {
 export class VeoClient {
   private apiKey: string | null = null;
   private ai: GoogleGenAI | null = null;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initClient();
+    // Lazy initialization will be done on first use
   }
 
-  private initClient() {
+  private async ensureInitialized() {
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.initClient();
+    return this.initPromise;
+  }
+
+  private async initClient() {
     const apiKeyData = ApiKeyService.getActive('veo');
     if (!apiKeyData) {
       return;
@@ -45,32 +55,33 @@ export class VeoClient {
       this.apiKey = decryptApiKey(apiKeyData.encryptedKey);
 
       // GoogleGenAI 클라이언트 초기화 (API Key만 사용)
-      // Note: @google/genai 패키지가 필요하지만, 현재는 구조만 준비
-      // 실제 사용 시 npm install @google/genai 필요
       if (this.apiKey) {
-        // const { GoogleGenAI } = require('@google/genai');
-        // this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+        const { GoogleGenAI } = await import('@google/genai');
+        this.ai = new GoogleGenAI({ apiKey: this.apiKey });
       }
     } catch (error) {
       console.error('Failed to initialize Veo client:', error);
+      throw error;
     }
   }
 
   async generateVideo(request: VeoVideoRequest) {
+    // Ensure client is initialized
+    await this.ensureInitialized();
+
     if (!this.apiKey) {
       throw new Error('Veo client not initialized. Please add an API key in settings.');
+    }
+
+    if (!this.ai) {
+      throw new Error('GoogleGenAI client not initialized. Please check your API key.');
     }
 
     const startTime = Date.now();
 
     try {
       // 새로운 GoogleGenAI SDK 사용
-      // 실제 구현 시 @google/genai 패키지 설치 후 아래 주석 해제
-      /*
-      const { GoogleGenAI } = require('@google/genai');
-      const ai = new GoogleGenAI({ apiKey: this.apiKey });
-
-      let operation = await ai.models.generateVideos({
+      let operation = await this.ai.models.generateVideos({
         model: "veo-3.1-generate-preview",
         prompt: request.prompt,
         // 추가 옵션 설정 가능
@@ -80,7 +91,7 @@ export class VeoClient {
       while (!operation.done) {
         console.log("Waiting for video generation to complete...");
         await new Promise((resolve) => setTimeout(resolve, 10000));
-        operation = await ai.operations.getVideosOperation({
+        operation = await this.ai.operations.getVideosOperation({
           operation: operation,
         });
       }
@@ -90,16 +101,6 @@ export class VeoClient {
         success: true,
         data: operation.response,
         operation: operation,
-        duration,
-      };
-      */
-
-      // 임시: 기본 응답 구조 반환 (실제 SDK 설치 전)
-      const duration = Date.now() - startTime;
-      return {
-        success: false,
-        error: 'GoogleGenAI SDK not yet installed. Please run: npm install @google/genai',
-        note: 'This implementation is ready for @google/genai package. Uncomment the code above after installation.',
         duration,
       };
     } catch (error: any) {
