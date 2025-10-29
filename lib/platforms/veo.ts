@@ -2,12 +2,17 @@
 import axios from 'axios';
 import { ApiKeyService, decryptApiKey } from '../db';
 
+export type VeoTemplate = 'text-to-video' | 'reference-images' | 'video-extension';
+
 export interface VeoVideoRequest {
   prompt: string;
+  template?: VeoTemplate; // 템플릿 선택
   duration?: number; // seconds
   resolution?: '720p' | '1080p';
   aspectRatio?: '16:9' | '9:16' | '1:1';
-  image?: string; // Image URL
+  image?: string; // Image URL (deprecated - use referenceImages or sourceVideo)
+  referenceImages?: string[]; // 참조 이미지 (최대 3개)
+  sourceVideo?: string; // 연장할 비디오 URL
 }
 
 export class VeoClient {
@@ -43,6 +48,7 @@ export class VeoClient {
     const url = `https://${this.region}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.region}/publishers/google/models/veo-3.1-generate-preview:generateVideos`;
 
     try {
+      const template = request.template || 'text-to-video';
       const requestBody: any = {
         generateVideosRequest: {
           prompt: {
@@ -55,13 +61,49 @@ export class VeoClient {
         },
       };
 
-      if (request.image) {
-        // Assuming the API takes an image URL. The documentation is not super clear on the format.
-        // This part might need adjustment based on the exact API spec.
-        requestBody.generateVideosRequest.prompt.image = {
-            source: {
-                gcsUri: request.image
+      // 템플릿별 구성
+      switch (template) {
+        case 'text-to-video':
+          // 기본 텍스트 to 비디오 - 추가 설정 없음
+          break;
+
+        case 'reference-images':
+          // 참조 이미지 사용 (최대 3개)
+          if (request.referenceImages && request.referenceImages.length > 0) {
+            const referenceImages = request.referenceImages.slice(0, 3).map(imageUrl => ({
+              image: {
+                gcsUri: imageUrl, // GCS URI 형식이어야 함
+              },
+              referenceType: 'asset',
+            }));
+            requestBody.generateVideosRequest.config = {
+              referenceImages,
+            };
+          }
+          break;
+
+        case 'video-extension':
+          // 동영상 연장
+          if (request.sourceVideo) {
+            requestBody.generateVideosRequest.video = {
+              gcsUri: request.sourceVideo, // GCS URI 형식이어야 함
+            };
+            // 연장 시 추가 설정
+            if (!requestBody.generateVideosRequest.config) {
+              requestBody.generateVideosRequest.config = {};
             }
+            requestBody.generateVideosRequest.config.numberOfVideos = 1;
+            requestBody.generateVideosRequest.config.resolution = request.resolution || '720p';
+          }
+          break;
+      }
+
+      // 하위 호환성: 기존 image 필드 지원
+      if (request.image && !request.referenceImages && !request.sourceVideo) {
+        requestBody.generateVideosRequest.prompt.image = {
+          source: {
+            gcsUri: request.image
+          }
         }
       }
 
