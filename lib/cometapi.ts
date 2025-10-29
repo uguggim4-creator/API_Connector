@@ -71,9 +71,27 @@ class CometAPIClient {
         };
       }
 
+      // Veo 응답에서 비디오 URL 추출
+      let videoUrl = null;
+      if (data.choices && data.choices[0]?.message?.content) {
+        const content = data.choices[0].message.content;
+        // 마크다운에서 비디오 URL 추출 (Watch Online 또는 Download Video 링크)
+        const urlMatch = content.match(/https:\/\/filesystem\.site\/cdn\/[^\s)]+\.mp4/);
+        if (urlMatch) {
+          videoUrl = urlMatch[0];
+        }
+      }
+
+      // 응답 데이터 구조 정리
+      const formattedData = {
+        ...data,
+        video_url: videoUrl,
+        raw_content: data.choices?.[0]?.message?.content,
+      };
+
       return {
         success: true,
-        data,
+        data: formattedData,
         duration,
       };
     } catch (error: any) {
