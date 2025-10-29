@@ -1,6 +1,6 @@
-// Seedream API 엔드포인트
+// Seedream API 엔드포인트 (CometAPI 통합)
 import { NextRequest, NextResponse } from 'next/server';
-import { seedreamClient } from '@/lib/platforms/seedream';
+import { cometAPIClient } from '@/lib/cometapi';
 import { UsageLogService } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -20,13 +20,8 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'image':
-        endpoint = '/seedream/generate';
-        result = await seedreamClient.generateImage(params);
-        break;
-
-      case 'upscale':
-        endpoint = '/seedream/upscale';
-        result = await seedreamClient.upscaleImage(params.imageUrl, params.scaleFactor);
+        endpoint = '/v1/images/generations';
+        result = await cometAPIClient.generateSeedreamImage(params);
         break;
 
       default:
@@ -39,7 +34,7 @@ export async function POST(request: NextRequest) {
     // 사용 로그 저장
     UsageLogService.add({
       platform: 'seedream',
-      apiKeyId: 'default',
+      apiKeyId: 'cometapi',
       endpoint,
       method: 'POST',
       statusCode: result.success ? 200 : 500,

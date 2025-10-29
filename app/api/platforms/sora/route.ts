@@ -1,4 +1,4 @@
-// Kling AI API 엔드포인트 (CometAPI 통합)
+// Sora 2 API 엔드포인트 (CometAPI 통합)
 import { NextRequest, NextResponse } from 'next/server';
 import { cometAPIClient } from '@/lib/cometapi';
 import { UsageLogService } from '@/lib/db';
@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'video':
-        endpoint = '/v1/videos/generations';
-        result = await cometAPIClient.generateKlingVideo(params);
+        endpoint = '/v1/videos';
+        result = await cometAPIClient.generateSoraVideo(params);
         break;
 
       default:
@@ -33,10 +33,11 @@ export async function POST(request: NextRequest) {
 
     // 사용 로그 저장
     UsageLogService.add({
-      platform: 'kling',
+      platform: 'sora',
       apiKeyId: 'cometapi',
       endpoint,
       method: 'POST',
+      model: params.model || 'sora-2',
       statusCode: result.success ? 200 : 500,
       success: result.success,
       errorMessage: result.success ? undefined : result.error,
@@ -51,3 +52,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

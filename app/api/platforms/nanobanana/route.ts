@@ -1,4 +1,4 @@
-// Kling AI API 엔드포인트 (CometAPI 통합)
+// Nanobanana API 엔드포인트 (CometAPI 통합)
 import { NextRequest, NextResponse } from 'next/server';
 import { cometAPIClient } from '@/lib/cometapi';
 import { UsageLogService } from '@/lib/db';
@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
     let endpoint = '';
 
     switch (action) {
-      case 'video':
-        endpoint = '/v1/videos/generations';
-        result = await cometAPIClient.generateKlingVideo(params);
+      case 'image':
+        endpoint = '/v1/images/generations';
+        result = await cometAPIClient.generateNanobananaImage(params);
         break;
 
       default:
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // 사용 로그 저장
     UsageLogService.add({
-      platform: 'kling',
+      platform: 'nanobanana',
       apiKeyId: 'cometapi',
       endpoint,
       method: 'POST',
@@ -51,3 +51,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

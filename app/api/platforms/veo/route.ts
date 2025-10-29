@@ -1,6 +1,6 @@
-// Google Veo 3.1 API 엔드포인트
+// Google Veo 3.1 API 엔드포인트 (CometAPI 통합)
 import { NextRequest, NextResponse } from 'next/server';
-import { veoClient } from '@/lib/platforms/veo';
+import { cometAPIClient } from '@/lib/cometapi';
 import { UsageLogService } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'video':
-        endpoint = '/publishers/google/models/veo-3.1-generate-preview:generateVideos';
-        result = await veoClient.generateVideo(params);
+        endpoint = '/v1/chat/completions';
+        result = await cometAPIClient.generateVeoVideo(params);
         break;
 
       default:
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
     // 사용 로그 저장
     UsageLogService.add({
       platform: 'veo',
-      apiKeyId: 'default',
+      apiKeyId: 'cometapi',
       endpoint,
       method: 'POST',
-      model: 'veo-3.1',
+      model: 'veo3.1-pro',
       statusCode: result.success ? 200 : 500,
       success: result.success,
       errorMessage: result.success ? undefined : result.error,

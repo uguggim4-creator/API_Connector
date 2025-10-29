@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 
 type CardId = "images" | "videos" | "projects";
 
@@ -890,12 +889,9 @@ export default function Home() {
       <div className="container mx-auto px-4 py-10">
         <header className="flex items-center justify-between mb-24">
           <h1 className="text-lg font-semibold tracking-tight">ainspire_내돈내산</h1>
-          <Link
-            href="/settings"
-            className="px-4 py-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/15 text-sm text-white transition-colors"
-          >
-            API 관리
-          </Link>
+          <div className="text-xs text-white/60 font-mono">
+            Powered by CometAPI
+          </div>
         </header>
 
         <section className="relative mx-auto flex items-center justify-center mb-32" onDragOver={onDragOver}>
