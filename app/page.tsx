@@ -636,8 +636,23 @@ export default function Home() {
         body.videoType = "vid_1.1_i2v_480"; // 기본 비디오 타입
         body.mode = "fast";
         body.animateMode = "manual";
+      } else if (vidModel === "kling") {
+        // Kling - 직접 API 파라미터
+        body.model_name = klingModelName;
+        body.mode = klingMode;
+        body.duration = klingDuration;
+        body.cfg_scale = klingCfgScale;
+        
+        // 이미지 설정
+        if (vidStart) body.image = [vidStart];
+        if (vidEnd) body.image_tail = vidEnd;
+        
+        // 네거티브 프롬프트
+        if (klingNegativePrompt) {
+          body.negative_prompt = klingNegativePrompt;
+        }
       } else {
-        // 다른 모델 (Kling, Sora)
+        // 다른 모델 (Sora)
         if (vidStart) body.image = [vidStart];
         if (vidEnd) body.image_end = [vidEnd];
       }
