@@ -241,6 +241,45 @@ export default function Home() {
   const [vidEnd, setVidEnd] = useState<string | null>(null);
   const [vidLoading, setVidLoading] = useState(false);
 
+  // Veo 3.1 template state
+  const [veoTemplate, setVeoTemplate] = useState<'text-to-video' | 'reference-images' | 'video-extension'>('text-to-video');
+  const [veoRefImages, setVeoRefImages] = useState<string[]>([]);
+  const [veoSourceVideo, setVeoSourceVideo] = useState<string | null>(null);
+
+  const veoTemplates = [
+    { value: 'text-to-video', label: '텍스트 to 비디오' },
+    { value: 'reference-images', label: '참조 이미지 사용 (최대 3개)' },
+    { value: 'video-extension', label: 'Veo 동영상 연장하기' },
+  ];
+
+  // Veo 템플릿 변경 시 자동 설정
+  useEffect(() => {
+    if (vidModel === 'veo') {
+      switch (veoTemplate) {
+        case 'text-to-video':
+          // 기본 설정
+          setVidRes('1280x720');
+          setVidSec(8);
+          break;
+        case 'reference-images':
+          // 참조 이미지 사용 시 설정
+          setVidRes('1280x720');
+          setVidSec(8);
+          setVidStart(null);
+          setVidEnd(null);
+          break;
+        case 'video-extension':
+          // 동영상 연장 시 설정
+          setVidRes('1280x720');
+          setVidSec(8);
+          setVidStart(null);
+          setVidEnd(null);
+          setVeoRefImages([]);
+          break;
+      }
+    }
+  }, [veoTemplate, vidModel]);
+
   const handleSingleImage = async (
     file: File | null,
     setUrl: (u: string) => void
@@ -258,6 +297,40 @@ export default function Home() {
     } catch {}
   };
 
+  const handleVeoRefImages = async (files: FileList | null) => {
+    if (!files) return;
+    const allow = ["image/jpeg", "image/jpg", "image/png"];
+    for (const f of Array.from(files)) {
+      if (!allow.includes(f.type.toLowerCase())) continue;
+      if (f.size > 10 * 1024 * 1024) continue;
+      if (veoRefImages.length >= 3) {
+        alert('최대 3개의 참조 이미지만 업로드할 수 있습니다.');
+        break;
+      }
+      const fd = new FormData();
+      fd.append("file", f);
+      try {
+        const r = await fetch("/api/upload-image", { method: "POST", body: fd });
+        const j = await r.json();
+        if (j.success && j.url) setVeoRefImages((p) => [...p, j.url]);
+      } catch {}
+    }
+  };
+
+  const handleVeoSourceVideo = async (file: File | null) => {
+    if (!file) return;
+    const allow = ["video/mp4", "video/webm", "video/quicktime"];
+    if (!allow.includes(file.type.toLowerCase())) return;
+    if (file.size > 100 * 1024 * 1024) return; // 100MB limit
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const r = await fetch("/api/upload-image", { method: "POST", body: fd });
+      const j = await r.json();
+      if (j.success && j.url) setVeoSourceVideo(j.url);
+    } catch {}
+  };
+
   const generateVideo = async () => {
     setVidLoading(true);
     try {
@@ -269,8 +342,34 @@ export default function Home() {
         width: isNaN(w) ? 1280 : w,
         height: isNaN(h) ? 720 : h,
       };
-      if (vidStart) body.image = [vidStart];
-      if (vidEnd) body.image_end = [vidEnd];
+
+      // Veo 3.1 템플릿별 설정
+      if (vidModel === "veo") {
+        body.template = veoTemplate;
+
+        switch (veoTemplate) {
+          case 'text-to-video':
+            // 기본 텍스트 to 비디오 - 추가 파라미터 없음
+            break;
+          case 'reference-images':
+            // 참조 이미지 사용
+            if (veoRefImages.length > 0) {
+              body.referenceImages = veoRefImages;
+            }
+            break;
+          case 'video-extension':
+            // 동영상 연장
+            if (veoSourceVideo) {
+              body.sourceVideo = veoSourceVideo;
+            }
+            break;
+        }
+      } else {
+        // 다른 모델 (Kling, Sora)
+        if (vidStart) body.image = [vidStart];
+        if (vidEnd) body.image_end = [vidEnd];
+      }
+
       const modelEndpoint = vidModel === "veo" ? "veo" : vidModel;
       const res = await fetch(`/api/platforms/${modelEndpoint}` , {
         method: "POST",
@@ -514,53 +613,7 @@ export default function Home() {
 
                     {pos === 0 && card.id === "videos" && (
                       <div className="grid grid-cols-1 gap-5 text-sm">
-                        {/* 스타트/엔드 이미지 - 크게 */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div
-                            onDragOver={(e) => {
-                              if (!isImageDrag(e.dataTransfer)) return;
-                              e.preventDefault();
-                            }}
-                            onDrop={(e) => {
-                              if (!isImageDrag(e.dataTransfer)) return;
-                              e.preventDefault();
-                              const url = e.dataTransfer.getData(DRAG_MIME);
-                              if (url) setVidStart(url);
-                            }}
-                          >
-                            <div className="mb-2 font-medium">스타트 이미지</div>
-                            <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
-                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                업로드
-                                <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVidStart(u))} />
-                              </label>
-                              {vidStart && <img src={vidStart} alt="start" className="mt-4 h-24 w-24 object-cover rounded-md border border-white/15" />}
-                            </div>
-                          </div>
-                          <div
-                            onDragOver={(e) => {
-                              if (!isImageDrag(e.dataTransfer)) return;
-                              e.preventDefault();
-                            }}
-                            onDrop={(e) => {
-                              if (!isImageDrag(e.dataTransfer)) return;
-                              e.preventDefault();
-                              const url = e.dataTransfer.getData(DRAG_MIME);
-                              if (url) setVidEnd(url);
-                            }}
-                          >
-                            <div className="mb-2 font-medium">엔드 이미지</div>
-                            <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
-                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                                업로드
-                                <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVidEnd(u))} />
-                              </label>
-                              {vidEnd && <img src={vidEnd} alt="end" className="mt-4 h-24 w-24 object-cover rounded-md border border-white/15" />}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 모델 / 해상도 / 시간 */}
+                        {/* 모델 선택 */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
                             <div className="mb-1 text-gray-300">모델</div>
@@ -583,6 +636,133 @@ export default function Home() {
                             <input type="number" min={1} max={60} value={vidSec} onChange={(e) => setVidSec(parseInt(e.target.value || "5", 10))} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2" />
                           </div>
                         </div>
+
+                        {/* Veo 3.1 템플릿 선택 */}
+                        {vidModel === "veo" && (
+                          <div>
+                            <div className="mb-1 text-gray-300">템플릿</div>
+                            <select value={veoTemplate} onChange={(e) => setVeoTemplate(e.target.value as any)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
+                              {veoTemplates.map((t) => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Veo 3.1: 텍스트 to 비디오 */}
+                        {vidModel === "veo" && veoTemplate === "text-to-video" && (
+                          <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+                            <div className="text-xs text-gray-400 mb-2">
+                              📝 텍스트 프롬프트만으로 비디오를 생성합니다.
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Veo 3.1: 참조 이미지 사용 */}
+                        {vidModel === "veo" && veoTemplate === "reference-images" && (
+                          <div>
+                            <div className="mb-2 font-medium">참조 이미지 (최대 3개)</div>
+                            <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                업로드
+                                <input type="file" accept="image/jpeg,image/jpg,image/png" multiple className="hidden" onChange={(e) => handleVeoRefImages(e.target.files)} />
+                              </label>
+                              <div className="mt-2 text-xs text-gray-400">
+                                드레스, 선글라스, 인물 등 비디오에 포함시킬 요소의 이미지를 업로드하세요.
+                              </div>
+                              {veoRefImages.length > 0 && (
+                                <div className="mt-4 grid grid-cols-3 gap-2">
+                                  {veoRefImages.map((u, i) => (
+                                    <div key={i} className="relative">
+                                      <img src={u} alt={`ref-${i}`} className="h-24 w-full object-cover rounded-md border border-white/15" />
+                                      <button
+                                        onClick={() => setVeoRefImages(veoRefImages.filter((_, idx) => idx !== i))}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Veo 3.1: 동영상 연장 */}
+                        {vidModel === "veo" && veoTemplate === "video-extension" && (
+                          <div>
+                            <div className="mb-2 font-medium">소스 비디오</div>
+                            <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                업로드
+                                <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={(e) => handleVeoSourceVideo(e.target.files?.[0] || null)} />
+                              </label>
+                              <div className="mt-2 text-xs text-gray-400">
+                                연장할 Veo 비디오를 업로드하세요. 프롬프트에 다음 장면을 설명하세요.
+                              </div>
+                              {veoSourceVideo && (
+                                <div className="mt-4">
+                                  <video src={veoSourceVideo} className="h-32 rounded-md border border-white/15" controls />
+                                  <button
+                                    onClick={() => setVeoSourceVideo(null)}
+                                    className="mt-2 text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    제거
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Kling/Sora: 스타트/엔드 이미지 */}
+                        {vidModel !== "veo" && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                              onDragOver={(e) => {
+                                if (!isImageDrag(e.dataTransfer)) return;
+                                e.preventDefault();
+                              }}
+                              onDrop={(e) => {
+                                if (!isImageDrag(e.dataTransfer)) return;
+                                e.preventDefault();
+                                const url = e.dataTransfer.getData(DRAG_MIME);
+                                if (url) setVidStart(url);
+                              }}
+                            >
+                              <div className="mb-2 font-medium">스타트 이미지</div>
+                              <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                  업로드
+                                  <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVidStart(u))} />
+                                </label>
+                                {vidStart && <img src={vidStart} alt="start" className="mt-4 h-24 w-24 object-cover rounded-md border border-white/15" />}
+                              </div>
+                            </div>
+                            <div
+                              onDragOver={(e) => {
+                                if (!isImageDrag(e.dataTransfer)) return;
+                                e.preventDefault();
+                              }}
+                              onDrop={(e) => {
+                                if (!isImageDrag(e.dataTransfer)) return;
+                                e.preventDefault();
+                                const url = e.dataTransfer.getData(DRAG_MIME);
+                                if (url) setVidEnd(url);
+                              }}
+                            >
+                              <div className="mb-2 font-medium">엔드 이미지</div>
+                              <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                  업로드
+                                  <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVidEnd(u))} />
+                                </label>
+                                {vidEnd && <img src={vidEnd} alt="end" className="mt-4 h-24 w-24 object-cover rounded-md border border-white/15" />}
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* 프롬프트 */}
                         <div>
