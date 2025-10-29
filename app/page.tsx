@@ -61,6 +61,19 @@ export default function Home() {
     return next;
   });
 
+  // Bring card to center when clicked
+  const bringToCenter = (cardId: CardId) => {
+    setOrder((prev) => {
+      const currentPos = prev.indexOf(cardId);
+      if (currentPos === 0) return prev; // already centered
+      const next = prev.slice();
+      // Move clicked card to front (center)
+      next.splice(currentPos, 1);
+      next.unshift(cardId);
+      return next;
+    });
+  };
+
   // Drag & drop (cards reorder) + image cross-banner drag support
   const dragId = useRef<CardId | null>(null);
   const lastAutoMoveAt = useRef<number>(0);
@@ -116,6 +129,7 @@ export default function Home() {
   const [imgTemplate, setImgTemplate] = useState("직접 입력");
   const [imgRefs, setImgRefs] = useState<string[]>([]);
   const [imgLoading, setImgLoading] = useState(false);
+  const [imgUploadLoading, setImgUploadLoading] = useState(false);
   const seedreamTemplates = [
     "직접 입력",
     "Mockup",
@@ -152,6 +166,7 @@ export default function Home() {
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files) return;
+    setImgUploadLoading(true);
     const allow = ["image/jpeg", "image/jpg", "image/png"];
     for (const f of Array.from(files)) {
       if (!allow.includes(f.type.toLowerCase())) continue;
@@ -164,10 +179,28 @@ export default function Home() {
         if (j.success && j.url) setImgRefs((p) => [...p, j.url]);
       } catch {}
     }
+    setImgUploadLoading(false);
   };
 
   const generateImages = async () => {
     setImgLoading(true);
+
+    // Add loading placeholder to gallery
+    const loadingId = Date.now();
+    try {
+      const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+      const loadingEntry = {
+        type: "image",
+        at: loadingId,
+        loading: true,
+        request: { prompt: imgPrompt },
+        result: {}
+      };
+      prev.unshift(loadingEntry);
+      localStorage.setItem("ainspire-results", JSON.stringify(prev));
+      setProjects(prev);
+    } catch {}
+
     try {
       const r = ratioMap[imgRatio] || ratioMap["1:1"];
       const parsedCount = Math.max(1, Math.min(4, parseInt((imgCount || "1"), 10) || 1));
@@ -215,17 +248,25 @@ export default function Home() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      // store to localStorage for Projects
+      // store to localStorage for Projects and replace loading entry
       try {
         const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+        const withoutLoading = prev.filter((p: any) => p.at !== loadingId);
         const entry = { type: "image", at: Date.now(), request: body, result: data };
-        prev.unshift(entry);
-        const next = prev.slice(0, 50);
+        withoutLoading.unshift(entry);
+        const next = withoutLoading.slice(0, 50);
         localStorage.setItem("ainspire-results", JSON.stringify(next));
         setProjects(next);
       } catch {}
       alert(data.success ? "이미지 생성 완료" : `실패: ${data.error || "unknown"}`);
     } catch (e) {
+      // Remove loading entry on error
+      try {
+        const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+        const withoutLoading = prev.filter((p: any) => p.at !== loadingId);
+        localStorage.setItem("ainspire-results", JSON.stringify(withoutLoading));
+        setProjects(withoutLoading);
+      } catch {}
       alert("요청 중 오류가 발생했습니다.");
     } finally {
       setImgLoading(false);
@@ -242,14 +283,17 @@ export default function Home() {
   const [vidLoading, setVidLoading] = useState(false);
 
   // Veo 3.1 template state
-  const [veoTemplate, setVeoTemplate] = useState<'text-to-video' | 'reference-images' | 'video-extension'>('text-to-video');
+  const [veoTemplate, setVeoTemplate] = useState<'text-to-video' | 'reference-images' | 'video-extension' | 'start-end-frame'>('text-to-video');
   const [veoRefImages, setVeoRefImages] = useState<string[]>([]);
   const [veoSourceVideo, setVeoSourceVideo] = useState<string | null>(null);
+  const [veoStartFrame, setVeoStartFrame] = useState<string | null>(null);
+  const [veoEndFrame, setVeoEndFrame] = useState<string | null>(null);
 
   const veoTemplates = [
     { value: 'text-to-video', label: '텍스트 to 비디오' },
     { value: 'reference-images', label: '참조 이미지 사용 (최대 3개)' },
     { value: 'video-extension', label: 'Veo 동영상 연장하기' },
+    { value: 'start-end-frame', label: '스타트-엔드 프레임' },
   ];
 
   // Veo 템플릿 변경 시 자동 설정
@@ -275,6 +319,15 @@ export default function Home() {
           setVidStart(null);
           setVidEnd(null);
           setVeoRefImages([]);
+          break;
+        case 'start-end-frame':
+          // 스타트-엔드 프레임 설정
+          setVidRes('1280x720');
+          setVidSec(8);
+          setVidStart(null);
+          setVidEnd(null);
+          setVeoRefImages([]);
+          setVeoSourceVideo(null);
           break;
       }
     }
@@ -333,6 +386,23 @@ export default function Home() {
 
   const generateVideo = async () => {
     setVidLoading(true);
+
+    // Add loading placeholder to gallery
+    const loadingId = Date.now();
+    try {
+      const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+      const loadingEntry = {
+        type: "video",
+        at: loadingId,
+        loading: true,
+        request: { prompt: vidPrompt },
+        result: {}
+      };
+      prev.unshift(loadingEntry);
+      localStorage.setItem("ainspire-results", JSON.stringify(prev));
+      setProjects(prev);
+    } catch {}
+
     try {
       const [w, h] = vidRes.split("x").map((n) => parseInt(n.trim(), 10));
       const body: any = {
@@ -363,6 +433,15 @@ export default function Home() {
               body.sourceVideo = veoSourceVideo;
             }
             break;
+          case 'start-end-frame':
+            // 스타트-엔드 프레임
+            if (veoStartFrame) {
+              body.startFrame = veoStartFrame;
+            }
+            if (veoEndFrame) {
+              body.endFrame = veoEndFrame;
+            }
+            break;
         }
       } else {
         // 다른 모델 (Kling, Sora)
@@ -377,16 +456,25 @@ export default function Home() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      // Replace loading entry with actual result
       try {
         const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+        const withoutLoading = prev.filter((p: any) => p.at !== loadingId);
         const entry = { type: "video", at: Date.now(), request: body, result: data };
-        prev.unshift(entry);
-        const next = prev.slice(0, 50);
+        withoutLoading.unshift(entry);
+        const next = withoutLoading.slice(0, 50);
         localStorage.setItem("ainspire-results", JSON.stringify(next));
         setProjects(next);
       } catch {}
       alert(data.success ? "비디오 요청 완료" : `실패: ${data.error || "unknown"}`);
     } catch {
+      // Remove loading entry on error
+      try {
+        const prev = JSON.parse(localStorage.getItem("ainspire-results") || "[]");
+        const withoutLoading = prev.filter((p: any) => p.at !== loadingId);
+        localStorage.setItem("ainspire-results", JSON.stringify(withoutLoading));
+        setProjects(withoutLoading);
+      } catch {}
       alert("요청 중 오류가 발생했습니다.");
     } finally {
       setVidLoading(false);
@@ -486,17 +574,23 @@ export default function Home() {
                   draggable
                   onDragStart={onDragStart(card.id)}
                   onDrop={onDrop(card.id)}
+                  onClick={() => {
+                    if (pos !== 0) {
+                      bringToCenter(card.id);
+                    }
+                  }}
                   className="group absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none cursor-grab active:cursor-grabbing rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] overflow-hidden w-[82%] md:w-[66%] lg:w-[58%] h-full will-change-transform"
                   style={{
                     transform: `translate3d(calc(-50% + ${baseX + tx}px), calc(-50% + ${ty}px), 0) scale(${baseScale})`,
                     transition: "transform 280ms cubic-bezier(.2,.8,.2,1)",
                     zIndex: z,
+                    cursor: pos !== 0 ? "pointer" : "grab",
                   }}
                   onDragOver={(e) => {
                     // While dragging an image, hovering a side card auto-centers it
                     if (!isImageDrag(e.dataTransfer)) return;
                     const now = Date.now();
-                    if (now - lastAutoMoveAt.current < 300) return;
+                    if (now - lastAutoMoveAt.current < 600) return;
                     if (pos === 1) {
                       lastAutoMoveAt.current = now;
                       slideLeft(); // bring left card to center
@@ -531,14 +625,21 @@ export default function Home() {
                       <div className="grid grid-cols-1 gap-5 text-sm">
                         {/* 첨부 이미지 - 크게 */}
                         <div>
-                          <div className="mb-2 font-medium">첨부 이미지</div>
-                          <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
-                            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
-                              업로드
-                              <input type="file" accept="image/jpeg,image/jpg,image/png" multiple className="hidden" onChange={(e) => handleImageFiles(e.target.files)} />
+                          <div className="mb-2 font-medium flex items-center justify-between">
+                            <span>첨부 이미지</span>
+                            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                              {imgUploadLoading ? "업로드 중..." : "업로드"}
+                              <input type="file" accept="image/jpeg,image/jpg,image/png" multiple className="hidden" onChange={(e) => handleImageFiles(e.target.files)} disabled={imgUploadLoading} />
                             </label>
+                          </div>
+                          <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                            {imgUploadLoading && (
+                              <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                              </div>
+                            )}
                             {imgRefs.length > 0 && (
-                              <div className="mt-4 grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
                                 {imgRefs.map((u, i) => (
                                   <img
                                     key={i}
@@ -548,20 +649,23 @@ export default function Home() {
                                     onDragStart={(e) => {
                                       e.dataTransfer.setData(DRAG_MIME, u);
                                       e.dataTransfer.effectAllowed = "copy";
-                                      // Create small drag image preview
+                                      // Create smaller drag image preview
                                       const dragImg = new Image();
                                       dragImg.src = u;
-                                      dragImg.style.width = "80px";
-                                      dragImg.style.height = "80px";
+                                      dragImg.style.width = "60px";
+                                      dragImg.style.height = "60px";
                                       dragImg.style.objectFit = "cover";
                                       dragImg.style.borderRadius = "8px";
                                       dragImg.style.opacity = "0.9";
-                                      e.dataTransfer.setDragImage(dragImg, 40, 40);
+                                      e.dataTransfer.setDragImage(dragImg, 30, 30);
                                     }}
-                                    className="h-20 w-full object-cover rounded-md border border-white/15 cursor-grab active:cursor-grabbing"
+                                    className="aspect-square w-full object-cover rounded-md border border-white/15 cursor-grab active:cursor-grabbing"
                                   />
                                 ))}
                               </div>
+                            )}
+                            {!imgUploadLoading && imgRefs.length === 0 && (
+                              <div className="text-center text-white/40 py-4">이미지를 업로드하세요</div>
                             )}
                           </div>
                         </div>
@@ -716,6 +820,80 @@ export default function Home() {
                           </div>
                         )}
 
+                        {/* Veo 3.1: 스타트-엔드 프레임 */}
+                        {vidModel === "veo" && veoTemplate === "start-end-frame" && (
+                          <div>
+                            <div className="mb-2 font-medium">스타트 & 엔드 프레임</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div
+                                onDragOver={(e) => {
+                                  if (!isImageDrag(e.dataTransfer)) return;
+                                  e.preventDefault();
+                                }}
+                                onDrop={(e) => {
+                                  if (!isImageDrag(e.dataTransfer)) return;
+                                  e.preventDefault();
+                                  const url = e.dataTransfer.getData(DRAG_MIME);
+                                  if (url) setVeoStartFrame(url);
+                                }}
+                              >
+                                <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                                  <div className="mb-2 text-sm font-medium">스타트 프레임</div>
+                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                    업로드
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoStartFrame(u))} />
+                                  </label>
+                                  {veoStartFrame && (
+                                    <div className="mt-4 relative">
+                                      <img src={veoStartFrame} alt="start-frame" className="h-32 w-full object-cover rounded-md border border-white/15" />
+                                      <button
+                                        onClick={() => setVeoStartFrame(null)}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div
+                                onDragOver={(e) => {
+                                  if (!isImageDrag(e.dataTransfer)) return;
+                                  e.preventDefault();
+                                }}
+                                onDrop={(e) => {
+                                  if (!isImageDrag(e.dataTransfer)) return;
+                                  e.preventDefault();
+                                  const url = e.dataTransfer.getData(DRAG_MIME);
+                                  if (url) setVeoEndFrame(url);
+                                }}
+                              >
+                                <div className="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-6">
+                                  <div className="mb-2 text-sm font-medium">엔드 프레임</div>
+                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/15 cursor-pointer text-white">
+                                    업로드
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSingleImage(e.target.files?.[0] || null, (u) => setVeoEndFrame(u))} />
+                                  </label>
+                                  {veoEndFrame && (
+                                    <div className="mt-4 relative">
+                                      <img src={veoEndFrame} alt="end-frame" className="h-32 w-full object-cover rounded-md border border-white/15" />
+                                      <button
+                                        onClick={() => setVeoEndFrame(null)}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-400">
+                              비디오의 첫 프레임과 마지막 프레임을 지정하여 그 사이를 보간합니다.
+                            </div>
+                          </div>
+                        )}
+
                         {/* Kling/Sora: 스타트/엔드 이미지 */}
                         {vidModel !== "veo" && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -842,13 +1020,20 @@ export default function Home() {
                 const media = extractMedia(p.result);
                 const images = media.images.length ? media.images : (Array.isArray(p.request?.image) ? p.request.image : []);
                 const videos = media.videos;
+                const isLoading = p.loading === true;
+
                 return (
                   <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-2">
                     <div className="text-[9px] text-white/50 mb-1">
                       {new Date(p.at).toLocaleString()} · {p.type?.toUpperCase?.() || p.type}
                     </div>
                     <div className="aspect-square rounded-lg overflow-hidden bg-black/40 flex items-center justify-center">
-                      {videos.length > 0 ? (
+                      {isLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                          <div className="text-[9px] text-white/50">생성 중...</div>
+                        </div>
+                      ) : videos.length > 0 ? (
                         <video src={videos[0]} className="w-full h-full object-cover" controls />
                       ) : images.length > 0 ? (
                         <img src={images[0]} className="w-full h-full object-cover" alt="thumb" />
@@ -856,7 +1041,7 @@ export default function Home() {
                         <div className="text-xs text-white/50">미리보기 없음</div>
                       )}
                     </div>
-                    {images.length > 1 && (
+                    {!isLoading && images.length > 1 && (
                       <div className="mt-1 grid grid-cols-4 gap-1">
                         {images.slice(1, 5).map((u: string, idx: number) => (
                           <img key={idx} src={u} className="h-8 w-full object-cover rounded border border-white/10" />
