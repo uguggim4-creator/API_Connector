@@ -44,8 +44,6 @@ export default function SettingsPage() {
   // form state
   const [apiKey, setApiKey] = useState("");
   const [keyName, setKeyName] = useState("");
-  const [veoProjectId, setVeoProjectId] = useState("");
-  const [veoRegion, setVeoRegion] = useState("");
 
   // 전체 API 키 목록 (우측 패널에서 탭과 무관하게 모두 표시)
   const allKeysSorted = useMemo(() => {
@@ -76,8 +74,6 @@ export default function SettingsPage() {
   function resetForm() {
     setApiKey("");
     setKeyName("");
-    setVeoProjectId("");
-    setVeoRegion("");
   }
 
   async function handleAddKey(e: React.FormEvent) {
@@ -87,10 +83,6 @@ export default function SettingsPage() {
     try {
       const platform = mapTabToPlatform(active);
       const body: any = { platform, apiKey, keyName };
-      if (platform === "veo") {
-        body.projectId = veoProjectId;
-        body.region = veoRegion;
-      }
       const res = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,8 +126,6 @@ export default function SettingsPage() {
       setError(e.message);
     }
   }
-
-  const isVeo = mapTabToPlatform(active) === "veo";
 
   return (
     <div className="min-h-screen bg-black text-white relative">
@@ -204,31 +194,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {isVeo && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm mb-1 text-white/80">Project ID</label>
-                    <input
-                      value={veoProjectId}
-                      onChange={(e) => setVeoProjectId(e.target.value)}
-                      placeholder="veo-project-id"
-                      required
-                      className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1 text-white/80">Region</label>
-                    <input
-                      value={veoRegion}
-                      onChange={(e) => setVeoRegion(e.target.value)}
-                      placeholder="us-east-1"
-                      required
-                      className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="pt-2">
                 <button
                   type="submit"
@@ -241,7 +206,7 @@ export default function SettingsPage() {
               {error && <p className="text-red-400 text-sm">{error}</p>}
             </form>
             <p className="mt-4 text-xs text-white/50">
-              참고: Veo는 Project ID와 Region이 필요합니다. 다른 탭은 API Key만 입력하면 됩니다.
+              참고: 모든 플랫폼은 API Key만 입력하면 됩니다.
             </p>
           </div>
 
