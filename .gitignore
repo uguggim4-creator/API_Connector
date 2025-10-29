@@ -40,4 +40,5 @@ prisma/dev.db
 prisma/dev.db-journal
 
 # uploaded images
-public/uploads/
+public/uploads/"data/db.json"  
+"API_Connector/" 

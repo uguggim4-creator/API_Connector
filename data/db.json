@@ -1,4 +1,64 @@
 {
-  "apiKeys": [],
-  "usageLogs": []
+  "apiKeys": [
+    {
+      "id": "5eec7cdd-aebd-4ffc-9104-5129b32a1b3b",
+      "platform": "seedream",
+      "encryptedKey": "e490bfe960fe89fe80b4723484257c8e:2af673692e349303b4c183206cef91d7bddee934c792bd50435e3a809422d63dd35bbaadb9500570a4064276bb507efc",
+      "keyName": "123",
+      "isActive": true,
+      "createdAt": "2025-10-29T01:58:38.123Z"
+    }
+  ],
+  "usageLogs": [
+    {
+      "id": "9d171d5e-22a5-4457-8112-4d80fe6a4ba4",
+      "platform": "veo",
+      "apiKeyId": "default",
+      "endpoint": "/models/veo-3.1:generateVideo",
+      "method": "POST",
+      "model": "veo-3.1",
+      "statusCode": 500,
+      "success": false,
+      "errorMessage": "Request failed with status code 404",
+      "duration": 189,
+      "createdAt": "2025-10-28T08:02:16.162Z"
+    },
+    {
+      "id": "6cf161dd-b7c9-44ff-8676-a2204b02e99e",
+      "platform": "veo",
+      "apiKeyId": "default",
+      "endpoint": "/models/veo-3.1:generateVideo",
+      "method": "POST",
+      "model": "veo-3.1",
+      "statusCode": 500,
+      "success": false,
+      "errorMessage": "Request failed with status code 404",
+      "duration": 173,
+      "createdAt": "2025-10-28T08:07:12.447Z"
+    },
+    {
+      "id": "52c7f809-6719-41cf-88e9-23e7c03660d1",
+      "platform": "seedream",
+      "apiKeyId": "default",
+      "endpoint": "/seedream/generate",
+      "method": "POST",
+      "statusCode": 500,
+      "success": false,
+      "errorMessage": "The parameter `image` specified in the request is not valid: invalid url specified. Request id: 021761703768770e26ea4ff982ac6e590cb805428c1b8b8c79561",
+      "duration": 459,
+      "createdAt": "2025-10-29T02:09:28.653Z"
+    },
+    {
+      "id": "4a2170ea-7320-48e8-b31c-c08a3c1c86d2",
+      "platform": "seedream",
+      "apiKeyId": "default",
+      "endpoint": "/seedream/generate",
+      "method": "POST",
+      "statusCode": 500,
+      "success": false,
+      "errorMessage": "The parameter `image` specified in the request is not valid: invalid url specified. Request id: 0217617037879958cca7430dddaedce3e8171b216a684d5e134d5",
+      "duration": 310,
+      "createdAt": "2025-10-29T02:09:47.874Z"
+    }
+  ]
 }

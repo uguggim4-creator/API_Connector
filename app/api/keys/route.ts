@@ -31,7 +31,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { platform, apiKey, keyName } = body;
+    const { platform, apiKey, keyName, projectId, region } = body;
 
     if (!platform || !apiKey) {
       return NextResponse.json(
@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 플랫폼 유효성 검사
-    const validPlatforms = ['openai', 'gemini', 'veo', 'kling', 'seedream'];
+  // 플랫폼 유효성 검사
+  // 추가 요청에 따라 'nanobanana'와 'sora'도 허용
+  const validPlatforms = ['openai', 'gemini', 'veo', 'kling', 'seedream', 'nanobanana', 'sora'];
     if (!validPlatforms.includes(platform)) {
       return NextResponse.json(
         { success: false, error: 'Invalid platform' },
@@ -49,7 +50,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newKey = ApiKeyService.add(platform, apiKey, keyName);
+    if (platform === 'veo' && (!projectId || !region)) {
+      return NextResponse.json(
+        { success: false, error: 'Project ID and Region are required for Veo' },
+        { status: 400 }
+      );
+    }
+
+    const newKey = ApiKeyService.add(platform, apiKey, keyName, projectId, region);
 
     return NextResponse.json({
       success: true,
