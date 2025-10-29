@@ -181,6 +181,111 @@ export default function Home() {
   const nanobananaTemplates = ["직접 입력"];
   const templates = imgModel === "seedream" ? seedreamTemplates : nanobananaTemplates;
 
+  // Seedream 템플릿별 메타데이터
+  const seedreamTemplateInfo: Record<string, { imageGuide: string; examplePrompt: string }> = {
+    "Mockup": {
+      imageGuide: "제품 이미지를 업로드하세요 (배경 제거 권장)",
+      examplePrompt: "A clean product mockup on a modern desk setup with natural lighting"
+    },
+    "Virtual Try-On": {
+      imageGuide: "착용할 옷/액세서리 이미지와 모델 사진을 업로드하세요",
+      examplePrompt: "A person wearing the uploaded clothing item in a casual setting"
+    },
+    "Product Photos": {
+      imageGuide: "원본 제품 이미지를 업로드하세요",
+      examplePrompt: "Professional e-commerce product photo with white background and studio lighting"
+    },
+    "Storyboarding": {
+      imageGuide: "스토리보드 참조 이미지나 스케치를 업로드하세요 (선택)",
+      examplePrompt: "Wide shot establishing the location, cinematic framing"
+    },
+    "Portrait": {
+      imageGuide: "인물 사진을 업로드하세요 (얼굴이 잘 보이는 사진)",
+      examplePrompt: "Professional headshot with soft natural lighting, sharp focus on eyes"
+    },
+    "Anime": {
+      imageGuide: "참조할 캐릭터나 스타일 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Anime character with expressive eyes, dynamic pose, vibrant colors"
+    },
+    "Fashion": {
+      imageGuide: "의상 이미지나 모델 사진을 업로드하세요",
+      examplePrompt: "High fashion editorial shot with dramatic lighting and elegant pose"
+    },
+    "Interior": {
+      imageGuide: "인테리어 공간 사진이나 가구 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Modern minimalist living room with natural light, Scandinavian style"
+    },
+    "Food": {
+      imageGuide: "음식 사진을 업로드하세요",
+      examplePrompt: "Appetizing food photography with garnish, soft shadows, shallow depth of field"
+    },
+    "Car": {
+      imageGuide: "차량 이미지를 업로드하세요",
+      examplePrompt: "Luxury car in studio setting with dramatic lighting and reflective floor"
+    },
+    "Architecture": {
+      imageGuide: "건축물 사진이나 스케치를 업로드하세요 (선택)",
+      examplePrompt: "Modern architectural design with clean lines, glass facade, golden hour lighting"
+    },
+    "Illustration": {
+      imageGuide: "참조 이미지나 스케치를 업로드하세요 (선택)",
+      examplePrompt: "Digital illustration with vibrant colors, detailed textures, artistic composition"
+    },
+    "UI Mockup": {
+      imageGuide: "UI 스크린샷이나 디자인 요소를 업로드하세요 (선택)",
+      examplePrompt: "Clean UI design with glassmorphism effects, modern layout, intuitive navigation"
+    },
+    "Kids Book": {
+      imageGuide: "캐릭터 스케치나 참조 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Cute children's book illustration with friendly characters, bright colors, simple shapes"
+    },
+    "Pixel Art": {
+      imageGuide: "참조 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Retro 8-bit pixel art game character, limited color palette, isometric view"
+    },
+    "Watercolor": {
+      imageGuide: "참조 이미지나 스케치를 업로드하세요 (선택)",
+      examplePrompt: "Watercolor painting with soft edges, flowing colors, paper texture"
+    },
+    "Oil Painting": {
+      imageGuide: "참조 사진을 업로드하세요 (선택)",
+      examplePrompt: "Classical oil painting with rich textures, impasto technique, dramatic chiaroscuro"
+    },
+    "3D Render": {
+      imageGuide: "3D 모델이나 참조 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Photorealistic 3D render with ray tracing, physically based materials, studio lighting"
+    },
+    "Cinematic": {
+      imageGuide: "영화 스틸이나 참조 이미지를 업로드하세요 (선택)",
+      examplePrompt: "Cinematic shot with anamorphic bokeh, film grain, moody atmosphere"
+    },
+    "Photorealistic": {
+      imageGuide: "참조 사진을 업로드하세요 (선택)",
+      examplePrompt: "Photorealistic image with natural lighting, accurate materials, fine details"
+    },
+  };
+
+  // 템플릿 변경 시 자동으로 프롬프트 제안
+  useEffect(() => {
+    if (imgModel === "seedream" && imgTemplate !== "직접 입력") {
+      const templateData = seedreamTemplateInfo[imgTemplate];
+      if (templateData) {
+        // 프롬프트가 비어있거나 이전 템플릿의 예시 프롬프트인 경우 새로운 예시로 교체
+        const isEmptyOrExample = !imgPrompt || Object.values(seedreamTemplateInfo).some(t => t.examplePrompt === imgPrompt);
+        if (isEmptyOrExample) {
+          setImgPrompt(templateData.examplePrompt);
+        }
+      }
+    } else if (imgTemplate === "직접 입력") {
+      // "직접 입력"으로 변경 시 예시 프롬프트였다면 지우기
+      const isExample = Object.values(seedreamTemplateInfo).some(t => t.examplePrompt === imgPrompt);
+      if (isExample) {
+        setImgPrompt("");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imgTemplate, imgModel]);
+
   const ratioMap: Record<string, { width: number; height: number }> = {
     "1:1": { width: 1024, height: 1024 },
     "4:3": { width: 1152, height: 864 },
@@ -663,7 +768,51 @@ export default function Home() {
 
                     {pos === 0 && card.id === "images" && (
                       <div className="grid grid-cols-1 gap-5 text-sm">
-                        {/* 첨부 이미지 - 크게 */}
+                        {/* 모델 / 비율 / 개수 / 템플릿 */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <div>
+                            <div className="mb-1 text-gray-300">모델</div>
+                            <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
+                              <option value="seedream">Seedream 4.0</option>
+                              <option value="nanobanana">Nanobanana</option>
+                            </select>
+                          </div>
+                          <div>
+                            <div className="mb-1 text-gray-300">해상도 비율</div>
+                            <select value={imgRatio} onChange={(e) => setImgRatio(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
+                              {Object.keys(ratioMap).map((k) => (
+                                <option key={k} value={k}>{k}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <div className="mb-1 text-gray-300">이미지 갯수</div>
+                            <input type="number" min={1} max={4} value={imgCount} onChange={(e) => setImgCount(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2" />
+                          </div>
+                          <div>
+                            <div className="mb-1 text-gray-300">템플릿</div>
+                            <select value={imgTemplate} onChange={(e) => setImgTemplate(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
+                              {templates.map((t) => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* 템플릿 가이드 메시지 */}
+                        {imgModel === "seedream" && imgTemplate !== "직접 입력" && seedreamTemplateInfo[imgTemplate] && (
+                          <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="text-2xl">💡</div>
+                              <div className="flex-1">
+                                <div className="font-medium text-blue-300 mb-1">템플릿 가이드: {imgTemplate}</div>
+                                <div className="text-sm text-blue-200/80">{seedreamTemplateInfo[imgTemplate].imageGuide}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 첨부 이미지 */}
                         <div>
                           <div className="mb-2 font-medium flex items-center justify-between">
                             <span>첨부 이미지</span>
@@ -715,40 +864,19 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* 모델 / 비율 / 개수 / 템플릿 */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                          <div>
-                            <div className="mb-1 text-gray-300">모델</div>
-                            <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
-                              <option value="seedream">Seedream 4.0</option>
-                              <option value="nanobanana">Nanobanana</option>
-                            </select>
-                          </div>
-                          <div>
-                            <div className="mb-1 text-gray-300">해상도 비율</div>
-                            <select value={imgRatio} onChange={(e) => setImgRatio(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
-                              {Object.keys(ratioMap).map((k) => (
-                                <option key={k} value={k}>{k}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <div className="mb-1 text-gray-300">이미지 갯수</div>
-                            <input type="number" min={1} max={4} value={imgCount} onChange={(e) => setImgCount(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2" />
-                          </div>
-                          <div>
-                            <div className="mb-1 text-gray-300">템플릿</div>
-                            <select value={imgTemplate} onChange={(e) => setImgTemplate(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
-                              {templates.map((t) => (
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
                         {/* 프롬프트 */}
                         <div>
-                          <div className="mb-1 text-gray-300">프롬프트</div>
+                          <div className="mb-1 flex items-center justify-between">
+                            <span className="text-gray-300">프롬프트</span>
+                            {imgModel === "seedream" && imgTemplate !== "직접 입력" && seedreamTemplateInfo[imgTemplate] && (
+                              <button
+                                onClick={() => setImgPrompt(seedreamTemplateInfo[imgTemplate].examplePrompt)}
+                                className="text-xs px-3 py-1 rounded-lg border border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20 transition-colors"
+                              >
+                                ✨ 예시 프롬프트 사용
+                              </button>
+                            )}
+                          </div>
                           <textarea value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} rows={4} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-3" placeholder="이미지 설명을 입력하세요" />
                         </div>
 
