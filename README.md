@@ -169,7 +169,12 @@ API_Connector/
 [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 
 ### Google Veo 3.1
-Google Gemini API를 통해 접근 (동일한 API 키 사용)
+1. [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)에서 API 키 발급
+2. Google Cloud Console에서 **Generative Language API** 활성화 필요
+   - API 키와 연결된 프로젝트에서 API를 활성화해야 합니다
+   - 오류 발생 시 에러 메시지에 표시되는 활성화 링크를 클릭하세요
+   - 또는 새 API 키를 발급받으세요 (자동으로 필요한 권한이 설정됨)
+3. Gemini와 동일한 API 키를 사용할 수 있습니다
 
 ### Kling AI
 - 공식: [https://app.klingai.com/](https://app.klingai.com/)
