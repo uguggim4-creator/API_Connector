@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
 type CardId = "images" | "videos" | "projects";
 
@@ -16,15 +17,15 @@ const initialCards: CardMeta[] = [
   {
     id: "images",
     title: "이미지 툴",
-    subtitle: "Nanobanana · Seedream · Midjourney",
-    tools: ["Nanobanana", "Seedream", "Midjourney"],
+    subtitle: "Nanobanana · Seedream",
+    tools: ["Nanobanana", "Seedream"],
     depth: 14,
   },
   {
     id: "videos",
     title: "비디오 툴",
-    subtitle: "Kling · Veo 3.1 · Sora 2 · Midjourney",
-    tools: ["Kling", "Veo 3.1", "Sora 2", "Midjourney"],
+    subtitle: "Kling · Veo 3.1 · Sora 2",
+    tools: ["Kling", "Veo 3.1", "Sora 2"],
     depth: 10,
   },
   {
@@ -36,25 +37,6 @@ const initialCards: CardMeta[] = [
   },
 ];
 
-// 요금 정보 타입
-interface PricingInfo {
-  model: string;
-  price: number;
-  unit: string;
-  description: string;
-}
-
-const PRICING: PricingInfo[] = [
-  { model: "sora", price: 0.10, unit: "초", description: "Sora 2" },
-  { model: "sora-pro", price: 0.30, unit: "초", description: "Sora 2 Pro" },
-  { model: "seedream", price: 0.03, unit: "장", description: "Seedream 4.0" },
-  { model: "veo-standard", price: 0.40, unit: "초", description: "Veo 3.1 Standard" },
-  { model: "veo-fast", price: 0.15, unit: "초", description: "Veo 3.1 Fast" },
-  { model: "nanobanana", price: 0.039, unit: "장", description: "Nanobanana" },
-  { model: "midjourney", price: 0.04, unit: "장", description: "Midjourney" },
-  { model: "kling", price: 0, unit: "초", description: "Kling (가격 미정)" },
-];
-
 export default function Home() {
   // Card order state (first index is centered in slider)
   const [order, setOrder] = useState<CardId[]>(["images", "videos", "projects"]);
@@ -62,9 +44,6 @@ export default function Home() {
     () => Object.fromEntries(initialCards.map((c) => [c.id, c])),
     []
   ) as Record<CardId, CardMeta>;
-
-  // 요금관리 패널 상태
-  const [isPricingManagementOpen, setIsPricingManagementOpen] = useState(false);
 
   // Parallax removed per request
 
@@ -385,25 +364,14 @@ export default function Home() {
       const body: any = {
         action: "image",
         prompt: finalPrompt,
+        model: imgModel === "seedream" ? "seedream-4-0-250828" : "nanobanana-v1",
+        width: r.width,
+        height: r.height,
+        response_format: "url",
+        n: parsedCount,
+        watermark: false,
       };
-
-      // 모델별 파라미터 설정
-      if (imgModel === "seedream") {
-        body.model = "seedream-4-0-250828";
-        body.width = r.width;
-        body.height = r.height;
-        body.response_format = "url";
-        body.n = parsedCount;
-        body.watermark = false;
-        if (imgRefs.length) body.image = imgRefs;
-      } else if (imgModel === "nanobanana") {
-        body.width = r.width;
-        body.height = r.height;
-        body.n = parsedCount;
-      } else if (imgModel === "midjourney") {
-        body.mode = "FAST"; // FAST 또는 RELAX
-      }
-
+      if (imgRefs.length) body.image = imgRefs;
       const res = await fetch(`/api/platforms/${imgModel}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -461,14 +429,6 @@ export default function Home() {
     { value: 'video-extension', label: 'Veo 동영상 연장하기' },
     { value: 'start-end-frame', label: '스타트-엔드 프레임' },
   ];
-
-  // Kling state
-  const [klingModelName, setKlingModelName] = useState('kling-v2.1-master');
-  const [klingMode, setKlingMode] = useState('std');
-  const [klingDuration, setKlingDuration] = useState('5');
-  const [klingNegativePrompt, setKlingNegativePrompt] = useState('');
-  const [klingCfgScale, setKlingCfgScale] = useState(0.5);
-  const [klingShowAdvanced, setKlingShowAdvanced] = useState(false);
 
   // Veo 템플릿 변경 시 자동 설정
   useEffect(() => {
@@ -628,31 +588,8 @@ export default function Home() {
             }
             break;
         }
-      } else if (vidModel === "midjourney") {
-        // Midjourney 비디오 - 스타트 이미지가 있으면 이미지 URL을 프롬프트에 포함
-        if (vidStart) {
-          body.prompt = `${vidStart} ${vidPrompt}`;
-        }
-        body.videoType = "vid_1.1_i2v_480"; // 기본 비디오 타입
-        body.mode = "fast";
-        body.animateMode = "manual";
-      } else if (vidModel === "kling") {
-        // Kling - 직접 API 파라미터
-        body.model_name = klingModelName;
-        body.mode = klingMode;
-        body.duration = klingDuration;
-        body.cfg_scale = klingCfgScale;
-        
-        // 이미지 설정
-        if (vidStart) body.image = [vidStart];
-        if (vidEnd) body.image_tail = vidEnd;
-        
-        // 네거티브 프롬프트
-        if (klingNegativePrompt) {
-          body.negative_prompt = klingNegativePrompt;
-        }
       } else {
-        // 다른 모델 (Sora)
+        // 다른 모델 (Kling, Sora)
         if (vidStart) body.image = [vidStart];
         if (vidEnd) body.image_end = [vidEnd];
       }
@@ -700,84 +637,6 @@ export default function Home() {
     }
   }, []);
 
-  // 이번달 사용량 및 요금 계산
-  const calculateMonthlyUsage = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-
-    const usage: Record<string, { count: number; cost: number; unit: string }> = {};
-    let totalCost = 0;
-
-    projects.forEach((p) => {
-      const projectDate = new Date(p.at);
-      if (projectDate.getMonth() !== thisMonth || projectDate.getFullYear() !== thisYear) {
-        return; // 이번달이 아니면 스킵
-      }
-
-      if (p.loading) return; // 로딩 중인 항목 제외
-
-      const req = p.request || {};
-      let modelKey = "";
-      let cost = 0;
-      let unit = "";
-      let count = 0;
-
-      // 이미지 모델 처리
-      if (p.type === "image") {
-        const imageCount = parseInt(req.n || "1", 10);
-        count = imageCount;
-
-        if (req.model?.includes("seedream")) {
-          modelKey = "seedream";
-          cost = imageCount * 0.03;
-          unit = "장";
-        } else if (req.model?.includes("nanobanana")) {
-          modelKey = "nanobanana";
-          cost = imageCount * 0.039;
-          unit = "장";
-        } else if (req.mode === "FAST" || req.mode === "RELAX") {
-          // Midjourney (mode 파라미터로 판별)
-          modelKey = "midjourney";
-          cost = imageCount * 0.04;
-          unit = "장";
-        }
-      }
-      // 비디오 모델 처리
-      else if (p.type === "video") {
-        const duration = req.duration || 5;
-        count = duration;
-        unit = "초";
-
-        // 모델 판별 (API endpoint 기반)
-        if (req.model?.includes("veo") || p.result?.model?.includes("veo")) {
-          // Veo는 기본적으로 standard로 계산 (fast 구분이 필요하면 추가 로직 필요)
-          modelKey = "veo-standard";
-          cost = duration * 0.40;
-        } else if (req.model?.includes("sora") || p.result?.model?.includes("sora")) {
-          // Sora Pro 구분 (필요 시)
-          modelKey = "sora";
-          cost = duration * 0.10;
-        } else if (req.model?.includes("kling")) {
-          // Kling은 가격 정보가 없어서 0으로 처리
-          modelKey = "kling";
-          cost = 0;
-        }
-      }
-
-      if (modelKey && cost > 0) {
-        if (!usage[modelKey]) {
-          usage[modelKey] = { count: 0, cost: 0, unit };
-        }
-        usage[modelKey].count += count;
-        usage[modelKey].cost += cost;
-        totalCost += cost;
-      }
-    });
-
-    return { usage, totalCost };
-  }, [projects]);
-
   // Helpers to extract media from results for gallery
   const IMG_EXT = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
   const VID_EXT = [".mp4", ".webm", ".mov", ".m3u8"];
@@ -795,21 +654,13 @@ export default function Home() {
   function extractMedia(obj: any, max = 12): { images: string[]; videos: string[] } {
     const images: string[] = [];
     const videos: string[] = [];
-    
-    // Veo 응답의 video_url 우선 확인 (data.video_url 또는 video_url)
-    if (obj?.data?.video_url && isVideoUrl(obj.data.video_url)) {
-      videos.push(obj.data.video_url);
-    } else if (obj?.video_url && isVideoUrl(obj.video_url)) {
-      videos.push(obj.video_url);
-    }
-    
     const seen = new Set<any>();
     function walk(n: any, depth: number) {
       if (!n || depth > 6 || seen.has(n)) return;
       if (typeof n === "string") {
         if (looksLikeUrl(n)) {
           if (isImageUrl(n) && images.length < max) images.push(n);
-          else if (isVideoUrl(n) && videos.length < max && !videos.includes(n)) videos.push(n);
+          else if (isVideoUrl(n) && videos.length < max) videos.push(n);
         }
         return;
       }
@@ -830,173 +681,23 @@ export default function Home() {
       <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/background.jpg')",
+          backgroundImage: "url('/bg-gradient.svg')",
           opacity: 0.95,
         }}
       />
-
-      {/* 요금관리 패널 토글 버튼 */}
-      <button
-        onClick={() => setIsPricingManagementOpen(!isPricingManagementOpen)}
-        className="fixed top-24 right-4 z-50 px-4 py-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-sm text-white transition-all shadow-lg"
-        title="요금관리"
-      >
-        💰 요금관리
-      </button>
-
-      {/* 요금관리 패널 (기존 요금 패널) */}
-      <div
-        className={`fixed top-0 right-0 h-full w-96 bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl transform transition-transform duration-300 z-40 overflow-y-auto ${
-          isPricingManagementOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="p-6">
-          {/* 헤더 */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">💰 요금관리</h2>
-            <button
-              onClick={() => setIsPricingManagementOpen(false)}
-              className="text-white/60 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* 이번달 총 사용 요금 */}
-          <div className="mb-8 p-6 rounded-2xl border-2 border-yellow-500/30 bg-yellow-500/10">
-            <div className="text-sm text-yellow-200/80 mb-2">이번달 총 사용액</div>
-            <div className="text-4xl font-bold text-yellow-300">
-              ${calculateMonthlyUsage.totalCost.toFixed(3)}
-            </div>
-            <div className="text-xs text-yellow-200/60 mt-2">
-              {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
-            </div>
-          </div>
-
-          {/* 모델별 사용량 */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4 text-white/90">모델별 사용량</h3>
-            {Object.keys(calculateMonthlyUsage.usage).length === 0 ? (
-              <div className="text-sm text-white/40 text-center py-8">
-                이번달 사용 내역이 없습니다
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {Object.entries(calculateMonthlyUsage.usage).map(([modelKey, data]) => {
-                  const pricingInfo = PRICING.find(p => p.model === modelKey);
-                  return (
-                    <div
-                      key={modelKey}
-                      className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-white">
-                          {pricingInfo?.description || modelKey}
-                        </span>
-                        <span className="text-lg font-bold text-green-400">
-                          ${data.cost.toFixed(3)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/60">
-                        {data.count} {data.unit} × ${pricingInfo?.price || 0}/{data.unit}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 요금표 */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white/90">요금표</h3>
-            <div className="space-y-2">
-              {PRICING.map((pricing) => (
-                <div
-                  key={pricing.model}
-                  className="p-3 rounded-lg border border-white/10 bg-white/5 text-sm"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-white/90">{pricing.description}</span>
-                    <span className="text-blue-300 font-mono">
-                      ${pricing.price.toFixed(3)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-white/50">per {pricing.unit}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 참고 사항 */}
-          <div className="mt-8 p-4 rounded-xl border border-white/10 bg-white/5 text-xs text-white/60">
-            <div className="font-medium text-white/80 mb-2">💡 참고사항</div>
-            <ul className="space-y-1 list-disc list-inside">
-              <li>요금은 localStorage 기록 기반으로 계산됩니다</li>
-              <li>브라우저 캐시 삭제 시 기록이 초기화됩니다</li>
-              <li>실제 청구 금액은 API 제공업체에서 확인하세요</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* Content wrapper */}
       <div className="relative z-10">
 
       <div className="container mx-auto px-4 py-10">
         <header className="flex items-center justify-between mb-24">
-          <div className="flex items-center gap-8">
-            <h1 className="text-lg font-semibold tracking-tight">ainspire_내돈내산</h1>
-            
-            {/* Left Navigation Menu */}
-            <nav className="flex items-center gap-6">
-              <button 
-                onClick={() => window.location.href = '/generate'}
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                생성
-              </button>
-              <button 
-                onClick={() => bringToCenter('projects')}
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                프로젝트
-              </button>
-              <button 
-                className="text-sm text-white/80 hover:text-white transition-colors"
-                disabled
-                title="준비 중"
-              >
-                EXPLORE
-              </button>
-            </nav>
-          </div>
-          
-          {/* Right Navigation Menu */}
-          <nav className="flex items-center gap-6">
-            <button 
-              onClick={() => {
-                const pricingSection = document.getElementById('pricing-section');
-                if (pricingSection) {
-                  pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-              className="text-sm text-white/80 hover:text-white transition-colors"
-            >
-              요금
-            </button>
-            <button 
-              className="text-sm text-white/80 hover:text-white transition-colors"
-              onClick={() => window.location.href = 'mailto:contact@ainspire.com'}
-            >
-              문의하기
-            </button>
-            <button 
-              className="px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/15 text-sm text-white transition-colors"
-            >
-              로그인
-            </button>
-          </nav>
+          <h1 className="text-lg font-semibold tracking-tight">ainspire_내돈내산</h1>
+          <Link
+            href="/settings"
+            className="px-4 py-2 rounded-full border border-white/15 bg-white/10 hover:bg-white/15 text-sm text-white transition-colors"
+          >
+            API 관리
+          </Link>
         </header>
 
         <section className="relative mx-auto flex items-center justify-center mb-32" onDragOver={onDragOver}>
@@ -1074,7 +775,6 @@ export default function Home() {
                             <select value={imgModel} onChange={(e) => setImgModel(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2">
                               <option value="seedream">Seedream 4.0</option>
                               <option value="nanobanana">Nanobanana</option>
-                              <option value="midjourney">Midjourney</option>
                             </select>
                           </div>
                           <div>
@@ -1198,7 +898,6 @@ export default function Home() {
                               <option value="kling">Kling</option>
                               <option value="veo">Veo 3.1</option>
                               <option value="sora">Sora 2</option>
-                              <option value="midjourney">Midjourney</option>
                             </select>
                           </div>
                           <div>
@@ -1224,112 +923,6 @@ export default function Home() {
                                 <option key={t.value} value={t.value}>{t.label}</option>
                               ))}
                             </select>
-                          </div>
-                        )}
-
-                        {/* Kling 전용 파라미터 */}
-                        {vidModel === "kling" && (
-                          <div className="space-y-4 rounded-xl border border-purple-500/30 bg-purple-500/5 p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-sm font-semibold text-purple-300">⚙️ Kling 설정</h4>
-                              <button
-                                onClick={() => setKlingShowAdvanced(!klingShowAdvanced)}
-                                className="text-xs px-3 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition-colors"
-                              >
-                                {klingShowAdvanced ? "기본 옵션" : "고급 옵션"}
-                              </button>
-                            </div>
-
-                            {/* 기본 옵션 */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <div>
-                                <div className="mb-1 text-gray-300 text-sm">모델</div>
-                                <select
-                                  value={klingModelName}
-                                  onChange={(e) => setKlingModelName(e.target.value)}
-                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
-                                >
-                                  <option value="kling-v2.1-master">Kling v2.1 Master</option>
-                                  <option value="kling-v2.1-standard">Kling v2.1 Standard</option>
-                                  <option value="kling-v2.1-fast">Kling v2.1 Fast</option>
-                                  <option value="kling-v2-master">Kling v2 Master</option>
-                                  <option value="kling-v2-standard">Kling v2 Standard</option>
-                                  <option value="kling-v1.6-master">Kling v1.6 Master</option>
-                                  <option value="kling-v1.6-standard">Kling v1.6 Standard</option>
-                                </select>
-                              </div>
-                              <div>
-                                <div className="mb-1 text-gray-300 text-sm">모드</div>
-                                <select
-                                  value={klingMode}
-                                  onChange={(e) => setKlingMode(e.target.value)}
-                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
-                                >
-                                  <option value="std">Standard</option>
-                                  <option value="pro">Pro</option>
-                                </select>
-                              </div>
-                              <div>
-                                <div className="mb-1 text-gray-300 text-sm">영상 길이</div>
-                                <select
-                                  value={klingDuration}
-                                  onChange={(e) => setKlingDuration(e.target.value)}
-                                  className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-2 text-sm"
-                                >
-                                  <option value="5">5초</option>
-                                  <option value="10">10초</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            {/* 고급 옵션 */}
-                            {klingShowAdvanced && (
-                              <div className="space-y-4 pt-4 border-t border-purple-500/20">
-                                {/* CFG Scale */}
-                                <div>
-                                  <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-gray-300 text-sm">CFG Scale</span>
-                                    <span className="text-purple-300 text-sm font-mono">{klingCfgScale.toFixed(2)}</span>
-                                  </div>
-                                  <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.01"
-                                    value={klingCfgScale}
-                                    onChange={(e) => setKlingCfgScale(parseFloat(e.target.value))}
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                  />
-                                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                    <span>0.0</span>
-                                    <span className="text-gray-400">프롬프트 충실도 조절</span>
-                                    <span>1.0</span>
-                                  </div>
-                                </div>
-
-                                {/* Negative Prompt */}
-                                <div>
-                                  <div className="mb-1 text-gray-300 text-sm">네거티브 프롬프트</div>
-                                  <textarea
-                                    value={klingNegativePrompt}
-                                    onChange={(e) => setKlingNegativePrompt(e.target.value)}
-                                    rows={3}
-                                    className="w-full rounded-lg border border-white/15 bg-black/40 text-white p-3 text-sm"
-                                    placeholder="원하지 않는 요소를 설명하세요 (예: blurry, low quality, distorted)"
-                                  />
-                                </div>
-
-                                {/* 추가 기능 안내 */}
-                                <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
-                                  <div className="text-xs text-blue-300 font-medium mb-1">🔜 준비 중인 기능</div>
-                                  <div className="text-xs text-blue-200/70">
-                                    • Static Mask - 특정 영역 고정<br/>
-                                    • Dynamic Masks - 움직임 경로 지정<br/>
-                                    • Camera Control - 카메라 움직임 제어
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
 
@@ -1569,61 +1162,14 @@ export default function Home() {
                         {projects.length === 0 ? (
                           <div className="text-gray-400">아직 저장된 결과물이 없습니다.</div>
                         ) : (
-                          <div className="grid grid-cols-1 gap-4">
-                            {projects.map((p, i) => {
-                              const copyToClipboard = (text: string) => {
-                                navigator.clipboard.writeText(text).then(() => {
-                                  alert('클립보드에 복사되었습니다!');
-                                }).catch(() => {
-                                  alert('복사 중 오류가 발생했습니다.');
-                                });
-                              };
-
-                              return (
-                                <div key={i} className="rounded-xl border border-white/15 bg-white/10 p-4">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div>
-                                      <div className="text-xs text-gray-300">{new Date(p.at).toLocaleString()}</div>
-                                      <div className="font-medium text-base">{p.type?.toUpperCase?.() || p.type}</div>
-                                    </div>
-                                  </div>
-
-                                  {/* 요청 JSON */}
-                                  <div className="mb-3">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-semibold text-green-300">📤 요청 (Request)</span>
-                                      <button
-                                        onClick={() => copyToClipboard(JSON.stringify(p.request, null, 2))}
-                                        className="px-2 py-1 text-xs rounded bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 transition-colors"
-                                        title="복사"
-                                      >
-                                        복사
-                                      </button>
-                                    </div>
-                                    <pre className="text-xs overflow-auto max-h-48 p-3 rounded-lg bg-black/40 border border-white/10 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-                                      {JSON.stringify(p.request, null, 2)}
-                                    </pre>
-                                  </div>
-
-                                  {/* 응답 JSON */}
-                                  <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-semibold text-blue-300">📥 응답 (Response)</span>
-                                      <button
-                                        onClick={() => copyToClipboard(JSON.stringify(p.result, null, 2))}
-                                        className="px-2 py-1 text-xs rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 transition-colors"
-                                        title="복사"
-                                      >
-                                        복사
-                                      </button>
-                                    </div>
-                                    <pre className="text-xs overflow-auto max-h-48 p-3 rounded-lg bg-black/40 border border-white/10 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-                                      {JSON.stringify(p.result?.data || p.result, null, 2)}
-                                    </pre>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {projects.map((p, i) => (
+                              <div key={i} className="rounded-xl border border-white/15 bg-white/10 p-4">
+                                <div className="text-xs text-gray-300 mb-1">{new Date(p.at).toLocaleString()}</div>
+                                <div className="font-medium mb-2">{p.type?.toUpperCase?.() || p.type}</div>
+                                <pre className="text-xs overflow-x-auto max-h-40">{JSON.stringify(p.result?.data || p.result, null, 2)}</pre>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -1750,206 +1296,6 @@ export default function Home() {
               })}
             </div>
           )}
-        </section>
-
-        {/* 요금 플랜 섹션 */}
-        <section id="pricing-section" className="mx-auto max-w-7xl mt-20 mb-10">
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-white mb-3">요금 안내</h2>
-              <p className="text-white/60">비즈니스 규모에 맞는 플랜을 선택하세요</p>
-            </div>
-
-            {/* 요금 플랜 그리드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Free Plan */}
-              <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm p-6 hover:bg-white/10 transition-all">
-                <h3 className="text-xl font-bold text-white mb-2">Free</h3>
-                <p className="text-sm text-white/60 mb-6 h-12">
-                  개인 또는 소규모 팀을 위한 무료 플랜
-                </p>
-                <div className="mb-6">
-                  <div className="text-4xl font-bold text-white">0원</div>
-                  <div className="text-sm text-white/60 mt-1">평생무료</div>
-                  <div className="text-xs text-white/40 mt-1">*1만미디 연장 가능</div>
-                </div>
-                <button className="w-full py-3 rounded-lg border-2 border-teal-500/50 text-teal-400 font-medium hover:bg-teal-500/10 transition-colors mb-6">
-                  가입하기
-                </button>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-white text-sm mb-3">사용 가능 모델</h4>
-                  <div className="space-y-2 text-sm text-white/70">
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Seedream 4.0</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Nanobanana</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Midjourney</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Kling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Veo 3.1</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Sora 2</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Standard Plan */}
-              <div className="rounded-2xl border-2 border-teal-500 bg-white/10 backdrop-blur-sm p-6 relative hover:bg-white/15 transition-all">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-teal-500 text-white text-xs font-bold">
-                  추천! 가장 인기있는 상품
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Standard</h3>
-                <p className="text-sm text-white/60 mb-6 h-12">
-                  가장 일반적인 규모의 미디어 서비스 제공
-                </p>
-                <div className="mb-6">
-                  <div className="text-4xl font-bold text-white">210,000원</div>
-                  <div className="text-sm text-white/60 mt-1">/월</div>
-                  <div className="text-xs text-white/40 mt-1">(연간 계약)</div>
-                </div>
-                <button className="w-full py-3 rounded-lg bg-teal-500 text-white font-medium hover:bg-teal-600 transition-colors mb-6">
-                  구매하기
-                </button>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-white text-sm mb-3">사용 가능 모델</h4>
-                  <div className="space-y-2 text-sm text-white/70">
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Seedream 4.0</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Nanobanana</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Midjourney</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Kling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Veo 3.1</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Sora 2</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pro Plan */}
-              <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm p-6 hover:bg-white/10 transition-all">
-                <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
-                <p className="text-sm text-white/60 mb-6 h-12">
-                  서비스 성장에 따른 사용량의 확보가 요구되는 중소 · 중견 기업, 단체, 학원
-                </p>
-                <div className="mb-6">
-                  <div className="text-4xl font-bold text-white">350,000원</div>
-                  <div className="text-sm text-white/60 mt-1">/월</div>
-                  <div className="text-xs text-white/40 mt-1">(연간 계약)</div>
-                </div>
-                <button className="w-full py-3 rounded-lg border-2 border-teal-500/50 text-teal-400 font-medium hover:bg-teal-500/10 transition-colors mb-6">
-                  구매하기
-                </button>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-white text-sm mb-3">사용 가능 모델</h4>
-                  <div className="space-y-2 text-sm text-white/70">
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Seedream 4.0</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Nanobanana</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Midjourney</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Kling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Veo 3.1</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Sora 2</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ultra Plan */}
-              <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm p-6 hover:bg-white/10 transition-all">
-                <h3 className="text-xl font-bold text-white mb-2">Ultra</h3>
-                <p className="text-sm text-white/60 mb-6 h-12">
-                  대규모 서비스 운영과 엔터프라이즈급 지원이 필요한 기업
-                </p>
-                <div className="mb-6">
-                  <div className="text-4xl font-bold text-white">500,000원</div>
-                  <div className="text-sm text-white/60 mt-1">/월</div>
-                  <div className="text-xs text-white/40 mt-1">(연간 계약)</div>
-                </div>
-                <button className="w-full py-3 rounded-lg border-2 border-teal-500/50 text-teal-400 font-medium hover:bg-teal-500/10 transition-colors mb-6">
-                  구매하기
-                </button>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-white text-sm mb-3">사용 가능 모델</h4>
-                  <div className="space-y-2 text-sm text-white/70">
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Seedream 4.0</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Nanobanana</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Midjourney</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Kling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Veo 3.1</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400">✓</span>
-                      <span>Sora 2</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
       </div>
       </div>
