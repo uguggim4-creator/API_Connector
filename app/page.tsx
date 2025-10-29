@@ -1162,14 +1162,61 @@ export default function Home() {
                         {projects.length === 0 ? (
                           <div className="text-gray-400">아직 저장된 결과물이 없습니다.</div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {projects.map((p, i) => (
-                              <div key={i} className="rounded-xl border border-white/15 bg-white/10 p-4">
-                                <div className="text-xs text-gray-300 mb-1">{new Date(p.at).toLocaleString()}</div>
-                                <div className="font-medium mb-2">{p.type?.toUpperCase?.() || p.type}</div>
-                                <pre className="text-xs overflow-x-auto max-h-40">{JSON.stringify(p.result?.data || p.result, null, 2)}</pre>
-                              </div>
-                            ))}
+                          <div className="grid grid-cols-1 gap-4">
+                            {projects.map((p, i) => {
+                              const copyToClipboard = (text: string) => {
+                                navigator.clipboard.writeText(text).then(() => {
+                                  alert('클립보드에 복사되었습니다!');
+                                }).catch(() => {
+                                  alert('복사 중 오류가 발생했습니다.');
+                                });
+                              };
+
+                              return (
+                                <div key={i} className="rounded-xl border border-white/15 bg-white/10 p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                      <div className="text-xs text-gray-300">{new Date(p.at).toLocaleString()}</div>
+                                      <div className="font-medium text-base">{p.type?.toUpperCase?.() || p.type}</div>
+                                    </div>
+                                  </div>
+
+                                  {/* 요청 JSON */}
+                                  <div className="mb-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-semibold text-green-300">📤 요청 (Request)</span>
+                                      <button
+                                        onClick={() => copyToClipboard(JSON.stringify(p.request, null, 2))}
+                                        className="px-2 py-1 text-xs rounded bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 transition-colors"
+                                        title="복사"
+                                      >
+                                        복사
+                                      </button>
+                                    </div>
+                                    <pre className="text-xs overflow-auto max-h-48 p-3 rounded-lg bg-black/40 border border-white/10 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                                      {JSON.stringify(p.request, null, 2)}
+                                    </pre>
+                                  </div>
+
+                                  {/* 응답 JSON */}
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-semibold text-blue-300">📥 응답 (Response)</span>
+                                      <button
+                                        onClick={() => copyToClipboard(JSON.stringify(p.result, null, 2))}
+                                        className="px-2 py-1 text-xs rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 transition-colors"
+                                        title="복사"
+                                      >
+                                        복사
+                                      </button>
+                                    </div>
+                                    <pre className="text-xs overflow-auto max-h-48 p-3 rounded-lg bg-black/40 border border-white/10 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                                      {JSON.stringify(p.result?.data || p.result, null, 2)}
+                                    </pre>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
