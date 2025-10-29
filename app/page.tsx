@@ -764,13 +764,21 @@ export default function Home() {
   function extractMedia(obj: any, max = 12): { images: string[]; videos: string[] } {
     const images: string[] = [];
     const videos: string[] = [];
+    
+    // Veo 응답의 video_url 우선 확인 (data.video_url 또는 video_url)
+    if (obj?.data?.video_url && isVideoUrl(obj.data.video_url)) {
+      videos.push(obj.data.video_url);
+    } else if (obj?.video_url && isVideoUrl(obj.video_url)) {
+      videos.push(obj.video_url);
+    }
+    
     const seen = new Set<any>();
     function walk(n: any, depth: number) {
       if (!n || depth > 6 || seen.has(n)) return;
       if (typeof n === "string") {
         if (looksLikeUrl(n)) {
           if (isImageUrl(n) && images.length < max) images.push(n);
-          else if (isVideoUrl(n) && videos.length < max) videos.push(n);
+          else if (isVideoUrl(n) && videos.length < max && !videos.includes(n)) videos.push(n);
         }
         return;
       }
