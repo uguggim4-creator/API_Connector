@@ -32,6 +32,39 @@ class CometAPIClient {
   }): Promise<CometAPIResponse> {
     const startTime = Date.now();
     try {
+      // 프롬프트에 비디오 설정을 명시적으로 포함
+      let enhancedPrompt = params.prompt;
+      
+      // Duration 추가
+      if (params.duration && params.duration !== 8) {
+        enhancedPrompt = `[Duration: ${params.duration} seconds] ${enhancedPrompt}`;
+      }
+      
+      // 해상도 추가
+      if (params.width && params.height) {
+        enhancedPrompt = `[Resolution: ${params.width}x${params.height}] ${enhancedPrompt}`;
+      }
+      
+      // 스타트 프레임 정보
+      if (params.startFrame) {
+        enhancedPrompt = `[Start Frame Image: ${params.startFrame}] ${enhancedPrompt}`;
+      }
+      
+      // 엔드 프레임 정보
+      if (params.endFrame) {
+        enhancedPrompt = `[End Frame Image: ${params.endFrame}] ${enhancedPrompt}`;
+      }
+      
+      // 참조 이미지
+      if (params.referenceImages && params.referenceImages.length > 0) {
+        enhancedPrompt = `[Reference Images: ${params.referenceImages.join(', ')}] ${enhancedPrompt}`;
+      }
+      
+      // 소스 비디오
+      if (params.sourceVideo) {
+        enhancedPrompt = `[Source Video for Extension: ${params.sourceVideo}] ${enhancedPrompt}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
         method: 'POST',
         headers: {
@@ -44,19 +77,9 @@ class CometAPIClient {
           messages: [
             {
               role: 'user',
-              content: params.prompt
+              content: enhancedPrompt
             }
-          ],
-          // Veo 특정 파라미터
-          video_params: {
-            duration: params.duration || 8,
-            width: params.width || 1280,
-            height: params.height || 720,
-            reference_images: params.referenceImages,
-            source_video: params.sourceVideo,
-            start_frame: params.startFrame,
-            end_frame: params.endFrame,
-          }
+          ]
         }),
       });
 
