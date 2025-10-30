@@ -962,13 +962,12 @@ export default function Home() {
               >
                 프로젝트
               </button>
-              <button 
+              <a 
+                href="/explore"
                 className="text-sm text-white/80 hover:text-white transition-colors"
-                disabled
-                title="준비 중"
               >
                 EXPLORE
-              </button>
+              </a>
             </nav>
           </div>
           
