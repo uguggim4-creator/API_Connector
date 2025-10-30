@@ -50,7 +50,7 @@ export default function GeneratePage() {
   };
 
   // 마우스 드래그 중일 때만 이벤트 등록
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isDragging) return;
     window.addEventListener("mousemove", handleMouseMove as any);
     window.addEventListener("mouseup", handleMouseUp);
