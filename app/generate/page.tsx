@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type ToolType = "image" | "video";
 
@@ -49,11 +49,16 @@ export default function GeneratePage() {
     setIsDragging(false);
   };
 
-  // 마우스 이벤트 리스너
-  if (typeof window !== "undefined") {
+  // 마우스 드래그 중일 때만 이벤트 등록
+  React.useEffect(() => {
+    if (!isDragging) return;
     window.addEventListener("mousemove", handleMouseMove as any);
     window.addEventListener("mouseup", handleMouseUp);
-  }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove as any);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
 
   const seedreamTemplates = [
     "직접 입력",
