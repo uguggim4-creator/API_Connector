@@ -946,7 +946,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-10">
         <header className="flex items-center justify-between mb-24">
           <div className="flex items-center gap-8">
-            <h1 className="text-lg font-semibold tracking-tight">ainspire_내돈내산</h1>
+            <h1 className="text-lg font-semibold tracking-tight">AInspire</h1>
             
             {/* Left Navigation Menu */}
             <nav className="flex items-center gap-6">

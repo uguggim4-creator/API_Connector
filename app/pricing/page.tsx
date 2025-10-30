@@ -10,7 +10,7 @@ export default function PricingPage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <a href="/" className="text-lg font-semibold tracking-tight text-gray-900">
-              ainspire_내돈내산
+              AInspire
             </a>
             <nav className="flex items-center gap-8">
               <a href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
@@ -319,7 +319,7 @@ export default function PricingPage() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-600">
-            <p>&copy; 2025 ainspire_내돈내산. All rights reserved.</p>
+            <p>&copy; 2025 AInspire. All rights reserved.</p>
           </div>
         </div>
       </footer>

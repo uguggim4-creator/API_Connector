@@ -365,7 +365,7 @@ export default function GeneratePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-8">
                 <a href="/" className="text-lg font-semibold tracking-tight text-white">
-                  ainspire_내돈내산
+                  AInspire
                 </a>
                 <nav className="flex items-center gap-6">
                   <a href="/generate" className="text-sm text-white font-semibold">
