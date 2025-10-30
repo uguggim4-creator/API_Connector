@@ -5,43 +5,7 @@ import { useState } from "react";
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* 헤더 */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <a href="/" className="text-lg font-semibold tracking-tight text-gray-900">
-              AInspire
-            </a>
-            <nav className="flex items-center gap-8">
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                이미지
-              </a>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                비디오
-              </a>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                프로젝트
-              </a>
-              <button 
-                className="text-sm text-gray-400 cursor-not-allowed"
-                disabled
-                title="준비 중"
-              >
-                EXPLORE
-              </button>
-              <a href="/pricing" className="text-sm text-gray-900 font-semibold transition-colors">
-                요금
-              </a>
-              <a href="mailto:contact@ainspire.com" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                문의하기
-              </a>
-              <button className="px-4 py-2 rounded-full border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm text-gray-900 transition-colors">
-                로그인
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* 헤더는 전역 Header 사용 */}
 
       {/* 메인 컨텐츠 */}
       <main className="container mx-auto px-4 py-16">

@@ -354,69 +354,9 @@ export default function GeneratePage() {
 
   return (
     <>
-      {/* Background */}
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-black"
-        style={{
-          backgroundImage: "url('/background.jpg')",
-          opacity: 0.95,
-        }}
-      />
-
-      <div className="min-h-screen text-white relative z-10">
-        {/* 헤더 */}
-        <header className="border-b border-white/10 bg-black/50 backdrop-blur-xl">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-8">
-                <a href="/" className="text-lg font-semibold tracking-tight text-white">
-                  AInspire
-                </a>
-                <nav className="flex items-center gap-6">
-                  <a href="/generate" className="text-sm text-white font-semibold">
-                    생성
-                  </a>
-                  <a href="/" className="text-sm text-white/80 hover:text-white transition-colors">
-                    프로젝트
-                  </a>
-                  <a 
-                    href="/explore"
-                    className="text-sm text-white/80 hover:text-white transition-colors"
-                  >
-                    EXPLORE
-                  </a>
-                </nav>
-              </div>
-              <nav className="flex items-center gap-6">
-                <a 
-                  href="/#pricing-section" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = "/";
-                    setTimeout(() => {
-                      const pricingSection = document.getElementById('pricing-section');
-                      if (pricingSection) {
-                        pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }, 100);
-                  }}
-                  className="text-sm text-white/80 hover:text-white transition-colors"
-                >
-                  요금
-                </a>
-                <a href="mailto:contact@ainspire.com" className="text-sm text-white/80 hover:text-white transition-colors">
-                  문의하기
-                </a>
-                <button className="px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/15 text-sm text-white transition-colors">
-                  로그인
-                </button>
-              </nav>
-            </div>
-          </div>
-        </header>
-
+      <div className="text-white relative">
         {/* 메인 컨텐츠 */}
-        <div className="flex gap-0 h-[calc(100vh-80px)] relative">
+        <div className="flex gap-0 min-h-screen relative">
           {/* 좌측: 설정 패널 - 왼쪽 끝에 붙이기 */}
           <div 
             className="flex-shrink-0 border-r border-white/10 bg-black/50 backdrop-blur-xl overflow-y-auto"
@@ -769,9 +709,9 @@ export default function GeneratePage() {
           </div>
 
           {/* 우측: 결과물 표시 영역 - 세로 스크롤 갤러리 */}
-          <div className="flex-1 bg-black overflow-y-auto">
+          <div className="flex-1 bg-black/30 overflow-y-auto">
             {results.length === 0 ? (
-              <div className="flex items-center justify-center h-full min-h-[calc(100vh-80px)]">
+              <div className="flex items-center justify-center h-full min-h-screen">
                 <div className="text-center">
                   <div className="text-6xl mb-4">🎨</div>
                   <div className="text-xl text-white/70 mb-2">아직 생성된 결과가 없습니다</div>

@@ -825,15 +825,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      {/* Background image */}
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/background.jpg')",
-          opacity: 0.95,
-        }}
-      />
+    <div className="min-h-screen text-white relative">
 
       {/* 요금관리 패널 토글 버튼 */}
       <button
@@ -940,63 +932,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Content wrapper */}
-      <div className="relative z-10">
+  {/* Content wrapper (offset from sticky header) */}
+  <div className="relative z-10 pt-24">
 
       <div className="container mx-auto px-4 py-10">
-        <header className="flex items-center justify-between mb-24">
-          <div className="flex items-center gap-8">
-            <h1 className="text-lg font-semibold tracking-tight">AInspire</h1>
-            
-            {/* Left Navigation Menu */}
-            <nav className="flex items-center gap-6">
-              <button 
-                onClick={() => window.location.href = '/generate'}
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                생성
-              </button>
-              <button 
-                onClick={() => bringToCenter('projects')}
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                프로젝트
-              </button>
-              <a 
-                href="/explore"
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                EXPLORE
-              </a>
-            </nav>
-          </div>
-          
-          {/* Right Navigation Menu */}
-          <nav className="flex items-center gap-6">
-            <button 
-              onClick={() => {
-                const pricingSection = document.getElementById('pricing-section');
-                if (pricingSection) {
-                  pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-              className="text-sm text-white/80 hover:text-white transition-colors"
-            >
-              요금
-            </button>
-            <button 
-              className="text-sm text-white/80 hover:text-white transition-colors"
-              onClick={() => window.location.href = 'mailto:contact@ainspire.com'}
-            >
-              문의하기
-            </button>
-            <button 
-              className="px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/15 text-sm text-white transition-colors"
-            >
-              로그인
-            </button>
-          </nav>
-        </header>
 
         <section className="relative mx-auto flex items-center justify-center mb-32" onDragOver={onDragOver}>
           {/* Slider stage */}
