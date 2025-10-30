@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // 사용 로그 저장
     UsageLogService.add({
       platform: 'openai',
-      apiKeyId: 'default', // TODO: 실제 API 키 ID 사용
+      apiKeyId: 'openai-default',
       endpoint,
       method: 'POST',
       model,

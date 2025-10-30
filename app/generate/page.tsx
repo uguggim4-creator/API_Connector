@@ -20,6 +20,7 @@ export default function GeneratePage() {
 
   // 비디오 툴 상태
   const [vidModel, setVidModel] = useState("kling");
+  const [klingVersion, setKlingVersion] = useState("kling-v2.1-master");
   const [vidPrompt, setVidPrompt] = useState("");
   const [vidRes, setVidRes] = useState("1280x720");
   const [vidSec, setVidSec] = useState(5);
@@ -272,7 +273,7 @@ export default function GeneratePage() {
       };
 
       if (vidModel === "kling") {
-        body.model_name = "kling-v2.1-master";
+        body.model_name = klingVersion;
         body.mode = "std";
         body.duration = "5";
         body.cfg_scale = 0.5;
@@ -413,21 +414,9 @@ export default function GeneratePage() {
                         value={imgTemplate}
                         onChange={handleTemplateChange}
                         options={seedreamTemplates.map((t) => {
-                          const iconMap: Record<string, string> = {
-                            "직접 입력": "✏️",
-                            "Mockup": "📦",
-                            "Virtual Try-On": "👔",
-                            "Product Photos": "📸",
-                            "Portrait": "👤",
-                            "Anime": "🎭",
-                            "Fashion": "👗",
-                            "Interior": "🏠",
-                            "Food": "🍽️",
-                          };
                           return {
                             value: t,
                             label: t,
-                            icon: iconMap[t] || "📄",
                           };
                         })}
                         dropdownId="img-template"
@@ -443,18 +432,10 @@ export default function GeneratePage() {
                         value={imgRatio}
                         onChange={setImgRatio}
                         options={Object.keys(ratioMap).map((k) => {
-                          const iconMap: Record<string, string> = {
-                            "1:1": "⬜",
-                            "4:3": "📺",
-                            "3:4": "📱",
-                            "16:9": "🖥️",
-                            "9:16": "📲",
-                          };
                           return {
                             value: k,
                             label: k,
                             subtitle: `${ratioMap[k].width}x${ratioMap[k].height}`,
-                            icon: iconMap[k] || "🖼️",
                           };
                         })}
                         dropdownId="img-ratio"
@@ -559,6 +540,23 @@ export default function GeneratePage() {
                     />
                   </div>
 
+                  {/* Kling 버전 선택 */}
+                  {vidModel === "kling" && (
+                    <div>
+                      <label className="text-xs text-white/60 mb-2 block uppercase tracking-wide font-medium">Kling Version</label>
+                      <CustomSelect
+                        value={klingVersion}
+                        onChange={setKlingVersion}
+                        options={[
+                          { value: "kling-v2.1-master", label: "Kling v2.1 Master", subtitle: "최신 버전, 최고 품질" },
+                          { value: "kling-v2.0", label: "Kling v2.0", subtitle: "안정적인 성능" },
+                          { value: "kling-v1.5", label: "Kling v1.5", subtitle: "빠른 생성" },
+                        ]}
+                        dropdownId="kling-version"
+                      />
+                    </div>
+                  )}
+
                   {/* 해상도 & 길이 */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -567,8 +565,8 @@ export default function GeneratePage() {
                         value={vidRes}
                         onChange={setVidRes}
                         options={[
-                          { value: "1280x720", label: "1280x720", subtitle: "HD", icon: "📺" },
-                          { value: "1920x1080", label: "1920x1080", subtitle: "Full HD", icon: "🖥️" },
+                          { value: "1280x720", label: "1280x720", subtitle: "HD" },
+                          { value: "1920x1080", label: "1920x1080", subtitle: "Full HD" },
                         ]}
                         dropdownId="vid-res"
                       />
@@ -708,7 +706,7 @@ export default function GeneratePage() {
             <div className="absolute inset-y-0 -left-1 -right-1" />
           </div>
 
-          {/* 우측: 결과물 표시 영역 - 세로 스크롤 갤러리 */}
+          {/* 중앙: 결과물 표시 영역 - 세로 스크롤 갤러리 */}
           <div className="flex-1 bg-black/30 overflow-y-auto">
             {results.length === 0 ? (
               <div className="flex items-center justify-center h-full min-h-screen">
@@ -773,6 +771,72 @@ export default function GeneratePage() {
                 })}
               </div>
             )}
+          </div>
+
+          {/* 우측: 생성 목록 미리보기 패널 */}
+          <div className="w-64 flex-shrink-0 border-l border-white/10 bg-black/50 backdrop-blur-xl overflow-y-auto">
+            <div className="p-4">
+              <h3 className="text-sm font-semibold text-white/80 mb-3 uppercase tracking-wide">생성 목록</h3>
+              {results.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-3xl mb-2">📝</div>
+                  <div className="text-xs text-white/40">목록이 비어있습니다</div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {results.map((result, idx) => {
+                    const media = extractMedia(result.data);
+                    const thumbnail = media.images[0] || media.videos[0];
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className="rounded-lg border border-white/10 bg-white/5 overflow-hidden hover:border-white/30 hover:bg-white/10 transition-all cursor-pointer group"
+                      >
+                        {/* 썸네일 */}
+                        {thumbnail && (
+                          <div className="aspect-square w-full bg-black/60 overflow-hidden">
+                            {media.images.length > 0 ? (
+                              <img 
+                                src={thumbnail} 
+                                alt={`thumb-${idx}`}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            ) : (
+                              <video 
+                                src={thumbnail}
+                                className="w-full h-full object-cover"
+                                muted
+                              />
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* 정보 */}
+                        <div className="p-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-white/70 uppercase font-semibold px-2 py-0.5 rounded bg-white/10">
+                              {result.type}
+                            </span>
+                            <span className="text-[10px] text-white/50">
+                              #{results.length - idx}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-white/40">
+                            {new Date(result.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          {media.images.length > 1 && (
+                            <div className="text-[10px] text-white/50 mt-1">
+                              📷 {media.images.length}개
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

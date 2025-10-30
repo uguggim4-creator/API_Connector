@@ -9,9 +9,10 @@ export interface VeoVideoRequest {
   duration?: number; // seconds
   resolution?: '720p' | '1080p';
   aspectRatio?: '16:9' | '9:16' | '1:1';
-  image?: string; // Image URL (deprecated - use referenceImages or sourceVideo)
   referenceImages?: string[]; // 참조 이미지 (최대 3개)
   sourceVideo?: string; // 연장할 비디오 URL
+  startFrame?: string; // 스타트 프레임 이미지
+  endFrame?: string; // 엔드 프레임 이미지
 }
 
 // GoogleGenAI 타입 정의

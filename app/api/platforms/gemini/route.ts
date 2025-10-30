@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // 사용 로그 저장
     UsageLogService.add({
       platform: 'gemini',
-      apiKeyId: 'default',
+      apiKeyId: 'gemini-default',
       endpoint,
       method: 'POST',
       model,
