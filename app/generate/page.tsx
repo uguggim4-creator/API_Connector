@@ -238,6 +238,12 @@ export default function GeneratePage() {
         body.n = parsedCount;
       } else if (imgModel === "midjourney") {
         body.mode = "FAST";
+        // UI에서 선택한 비율을 Midjourney aspect_ratio로 매핑
+        body.aspect_ratio = imgRatio;
+        // Midjourney 기본 버전 설정
+        body.version = "6";
+        // Note: Midjourney는 한 번에 4개의 변형을 생성하므로 parsedCount는 무시됨
+        // 참조 이미지가 있는 경우 프롬프트에 추가 (향후 구현 가능)
       }
 
       const res = await fetch(`/api/platforms/${imgModel}`, {
@@ -246,7 +252,14 @@ export default function GeneratePage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      
+
+      // Midjourney 응답 디버깅
+      if (imgModel === "midjourney") {
+        console.log("=== Midjourney API Response ===");
+        console.log(JSON.stringify(data, null, 2));
+        console.log("===============================");
+      }
+
       if (data.success) {
         setResults((prev) => [{ type: "image", data, timestamp: Date.now() }, ...prev]);
         alert("이미지 생성 완료");
@@ -310,35 +323,64 @@ export default function GeneratePage() {
   const extractMedia = (obj: any): { images: string[]; videos: string[] } => {
     const images: string[] = [];
     const videos: string[] = [];
-    
+
     const IMG_EXT = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
     const VID_EXT = [".mp4", ".webm", ".mov", ".m3u8"];
-    
+
     function looksLikeUrl(v: string) {
       return typeof v === "string" && /^https?:\/\//i.test(v);
     }
     function isImageUrl(u: string) {
       const l = u.toLowerCase();
-      return IMG_EXT.some(ext => l.includes(ext));
+      // 쿼리 파라미터를 제거하고 확장자 확인
+      const urlWithoutQuery = l.split('?')[0];
+      return IMG_EXT.some(ext => urlWithoutQuery.endsWith(ext));
     }
     function isVideoUrl(u: string) {
       const l = u.toLowerCase();
-      return VID_EXT.some(ext => l.includes(ext));
+      // 쿼리 파라미터를 제거하고 확장자 확인
+      const urlWithoutQuery = l.split('?')[0];
+      return VID_EXT.some(ext => urlWithoutQuery.endsWith(ext));
+    }
+    function isCdnUrl(u: string) {
+      // CDN URL 패턴 감지 (이미지 호스팅 서비스)
+      const l = u.toLowerCase();
+      return /cdn|cloudinary|imgur|discord|midjourney|media/i.test(l);
     }
 
-    if (obj?.data?.video_url && isVideoUrl(obj.data.video_url)) {
+    // Midjourney 특정 필드 우선 확인
+    if (obj?.data?.imageUrl && looksLikeUrl(obj.data.imageUrl)) {
+      images.push(obj.data.imageUrl);
+    }
+    if (obj?.data?.uri && looksLikeUrl(obj.data.uri)) {
+      if (isVideoUrl(obj.data.uri)) videos.push(obj.data.uri);
+      else images.push(obj.data.uri);
+    }
+
+    // 비디오 URL 우선 확인
+    if (obj?.data?.video_url && looksLikeUrl(obj.data.video_url)) {
       videos.push(obj.data.video_url);
-    } else if (obj?.video_url && isVideoUrl(obj.video_url)) {
+    } else if (obj?.video_url && looksLikeUrl(obj.video_url)) {
       videos.push(obj.video_url);
     }
-    
+
     const seen = new Set<any>();
     function walk(n: any, depth: number) {
       if (!n || depth > 6 || seen.has(n)) return;
       if (typeof n === "string") {
         if (looksLikeUrl(n)) {
-          if (isImageUrl(n) && images.length < 12) images.push(n);
-          else if (isVideoUrl(n) && videos.length < 12 && !videos.includes(n)) videos.push(n);
+          // 이미지 URL 확인
+          if (isImageUrl(n) && images.length < 12 && !images.includes(n)) {
+            images.push(n);
+          }
+          // 비디오 URL 확인
+          else if (isVideoUrl(n) && videos.length < 12 && !videos.includes(n)) {
+            videos.push(n);
+          }
+          // CDN URL이면서 확장자가 명확하지 않은 경우 이미지로 간주
+          else if (isCdnUrl(n) && images.length < 12 && !images.includes(n) && !videos.includes(n)) {
+            images.push(n);
+          }
         }
         return;
       }
